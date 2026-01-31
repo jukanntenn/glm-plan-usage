@@ -1,0 +1,36 @@
+# Source code
+src/
+*.rs
+
+# Build artifacts
+target/
+Cargo.toml
+Cargo.lock
+
+# Documentation (except README)
+IMPLEMENTATION_*.md
+USAGE_EXAMPLES.md
+QUICK_START.md
+PROJECT_SUMMARY.md
+NPM_PUBLISHING_GUIDE.md
+claude-code-plugin-specification.md
+
+# Scripts
+build-all.sh
+install.sh
+test.sh
+
+# Git
+.git/
+.gitignore
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Config (sensitive data)
+config.toml
