@@ -8,7 +8,7 @@ pub struct GlmApiClient {
     agent: Agent,
     base_url: String,
     token: String,
-    platform: Platform,
+    _platform: Platform,
 }
 
 impl GlmApiClient {
@@ -40,7 +40,7 @@ impl GlmApiClient {
             agent,
             base_url,
             token,
-            platform,
+            _platform: platform,
         })
     }
 
@@ -99,7 +99,7 @@ impl GlmApiClient {
             .map(|item| QuotaUsage {
                 used: item.current_value,
                 limit: item.usage,
-                percentage: item.percentage.max(0).min(100) as u8,
+                percentage: item.percentage.clamp(0, 100) as u8,
                 time_window: "5h".to_string(),
             });
 
@@ -112,7 +112,7 @@ impl GlmApiClient {
             .map(|item| QuotaUsage {
                 used: item.current_value,
                 limit: item.usage,
-                percentage: item.percentage.max(0).min(100) as u8,
+                percentage: item.percentage.clamp(0, 100) as u8,
                 time_window: "30d".to_string(),
             });
 

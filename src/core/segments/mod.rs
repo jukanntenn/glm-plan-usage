@@ -2,7 +2,6 @@ pub mod glm_usage;
 
 use crate::config::{Config, InputData};
 
-pub use glm_usage::GlmUsageSegment;
 
 /// Segment data for rendering
 #[derive(Debug, Clone)]
@@ -11,21 +10,11 @@ pub struct SegmentData {
     pub style: SegmentStyle,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SegmentStyle {
     pub color: Option<(u8, u8, u8)>,
     pub color_256: Option<u8>,
     pub bold: bool,
-}
-
-impl Default for SegmentStyle {
-    fn default() -> Self {
-        Self {
-            color: None,
-            color_256: None,
-            bold: false,
-        }
-    }
 }
 
 /// Segment trait

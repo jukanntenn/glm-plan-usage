@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fmt;
 use thiserror::Error;
 
@@ -114,26 +114,3 @@ impl fmt::Display for QuotaUsage {
     }
 }
 
-/// Time window formatter
-pub struct TimeWindow;
-
-impl TimeWindow {
-    /// Format time as "yyyy-MM-dd HH:mm:ss"
-    pub fn format(time: chrono::DateTime<chrono::Utc>) -> String {
-        time.format("%Y-%m-%d %H:%M:%S").to_string()
-    }
-
-    /// Get time range for 5-hour window (tokens)
-    pub fn five_hour_window() -> (String, String) {
-        let now = chrono::Utc::now();
-        let start = now - chrono::Duration::hours(5);
-        (Self::format(start), Self::format(now))
-    }
-
-    /// Get time range for 30-day window (MCP)
-    pub fn thirty_day_window() -> (String, String) {
-        let now = chrono::Utc::now();
-        let start = now - chrono::Duration::days(30);
-        (Self::format(start), Self::format(now))
-    }
-}
