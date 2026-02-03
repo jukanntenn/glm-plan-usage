@@ -8,12 +8,12 @@ on:
     types: [created]
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
   sync-version:
-    name: Sync Cargo version to package.json
+    name: Sync Cargo version to npm/main/package.json
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -32,19 +32,19 @@ jobs:
       - name: Update package.json with Cargo version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp
-          mv package.json.tmp package.json
+          jq --arg v "$VERSION" '.version = $v' npm/main/package.json > npm/main/package.json.tmp
+          mv npm/main/package.json.tmp npm/main/package.json
 
           # Show updated version
-          echo "Updated package.json version:"
-          jq -r '.version' package.json
+          echo "Updated npm/main/package.json version:"
+          jq -r '.version' npm/main/package.json
 
       - name: Commit and push version sync
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: sync package.json version to v${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git add npm/main/package.json
+          git commit -m "chore: sync npm/main/package.json version to v${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push || echo "Nothing to push"
 
   build:
@@ -58,26 +58,36 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             use_cross: false
+            platform: linux-x64
+            binary_name: glm-plan-usage
 
           # Linux ARM64 (needs cross-compilation)
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
             use_cross: true
+            platform: linux-arm64
+            binary_name: glm-plan-usage
 
           # macOS x86_64 (Intel)
           - target: x86_64-apple-darwin
             os: macos-13
             use_cross: false
+            platform: darwin-x64
+            binary_name: glm-plan-usage
 
           # macOS ARM64 (Apple Silicon)
           - target: aarch64-apple-darwin
             os: macos-latest
             use_cross: false
+            platform: darwin-arm64
+            binary_name: glm-plan-usage
 
           # Windows x86_64
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             use_cross: false
+            platform: win32-x64
+            binary_name: glm-plan-usage.exe
 
     steps:
       - name: Checkout code
@@ -124,28 +134,35 @@ jobs:
         run: |
           strip target/${{ matrix.target }}/release/glm-plan-usage
 
-      - name: Prepare artifact
+      - name: Package binary
         shell: bash
         run: |
-          mkdir -p lib/${{ matrix.target }}
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} dist/${{ matrix.binary_name }}
 
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cp target/${{ matrix.target }}/release/glm-plan-usage.exe lib/${{ matrix.target }}/glm-plan-usage.exe
-          else
-            cp target/${{ matrix.target }}/release/glm-plan-usage lib/${{ matrix.target }}/glm-plan-usage
-            chmod +x lib/${{ matrix.target }}/glm-plan-usage
+          # Make executable on Unix-like systems
+          if [ "${{ runner.os }}" != "Windows" ]; then
+            chmod +x dist/${{ matrix.binary_name }}
           fi
 
-      - name: Upload artifact
+          # Create archive
+          cd dist
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a -tzip ../../${{ matrix.platform }}.zip ${{ matrix.binary_name }}
+          else
+            tar czf ../../${{ matrix.platform }}.tar.gz ${{ matrix.binary_name }}
+          fi
+
+      - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.target }}
-          path: lib/${{ matrix.target }}
+          name: binary-${{ matrix.platform }}
+          path: dist/${{ matrix.binary_name }}
           retention-days: 7
 
-  package-npm:
-    name: Package NPM
-    needs: build
+  publish-npm:
+    name: Publish to NPM
+    needs: [sync-version, build]
     runs-on: ubuntu-latest
 
     steps:
@@ -155,42 +172,76 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
+          node-version: '18'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Download all artifacts
+      - name: Download all binary artifacts
         uses: actions/download-artifact@v4
         with:
-          path: lib
+          path: binaries
 
-      - name: Prepare lib directory structure
+      - name: Extract binaries
         run: |
-          # Reorganize artifacts into expected structure
-          for dir in lib/binary-*; do
-            target=$(basename "$dir" | sed 's/binary-//')
-            mkdir -p "lib/$target"
+          mkdir -p extracted
+          for dir in binaries/binary-*; do
+            platform=$(basename "$dir" | sed 's/binary-//')
+
             if [ -f "$dir/glm-plan-usage" ]; then
-              cp "$dir/glm-plan-usage" "lib/$target/"
-              chmod +x "lib/$target/glm-plan-usage"
+              cp "$dir/glm-plan-usage" "extracted/$platform"
+              chmod +x "extracted/$platform"
             elif [ -f "$dir/glm-plan-usage.exe" ]; then
-              cp "$dir/glm-plan-usage.exe" "lib/$target/"
+              cp "$dir/glm-plan-usage.exe" "extracted/$platform.exe"
             fi
           done
 
-          # Remove artifact directories
-          rm -rf lib/binary-*
+          # Show extracted files
+          ls -lh extracted/
+
+      - name: Prepare NPM packages
+        run: |
+          VERSION="${{ needs.sync-version.outputs.version }}"
+          node npm/scripts/prepare-packages.js "$VERSION"
+
+      - name: Copy binaries to platform packages
+        run: |
+          # Copy each binary to its corresponding platform package
+          cp extracted/darwin-x64 npm-publish/darwin-x64/glm-plan-usage
+          cp extracted/darwin-arm64 npm-publish/darwin-arm64/glm-plan-usage
+          cp extracted/linux-x64 npm-publish/linux-x64/glm-plan-usage
+          cp extracted/linux-arm64 npm-publish/linux-arm64/glm-plan-usage
+          cp extracted/win32-x64.exe npm-publish/win32-x64/glm-plan-usage.exe
+
+          # Set executable permissions for Unix binaries
+          chmod +x npm-publish/darwin-x64/glm-plan-usage
+          chmod +x npm-publish/darwin-arm64/glm-plan-usage
+          chmod +x npm-publish/linux-x64/glm-plan-usage
+          chmod +x npm-publish/linux-arm64/glm-plan-usage
 
           # Show final structure
-          find lib -type f -exec ls -lh {} \;
+          echo "Platform packages:"
+          find npm-publish -type f -name "glm-plan-usage*" -exec ls -lh {} \;
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Publish to npm
-        run: npm publish
+      - name: Publish platform packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for platform in darwin-x64 darwin-arm64 linux-x64 linux-arm64 win32-x64; do
+            echo "📦 Publishing glm-plan-usage-$platform"
+            cd npm-publish/$platform
+            npm publish --access public
+            cd ../..
+          done
+
+      - name: Wait for NPM registry propagation
+        run: sleep 30
+
+      - name: Publish main package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "📦 Publishing glm-plan-usage (main package)"
+          cd npm-publish/main
+          npm publish --access public
 
   create-github-release:
     name: Create GitHub Release
@@ -203,32 +254,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download all binary artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: binaries
 
-      - name: Create release archives
+      - name: Extract binaries
         run: |
           mkdir -p release
 
-          # Create archives for each target
-          for dir in artifacts/binary-*; do
-            target=$(basename "$dir" | sed 's/binary-//')
+          # Copy binaries to release directory
+          for dir in binaries/binary-*; do
+            platform=$(basename "$dir" | sed 's/binary-//')
 
             if [ -f "$dir/glm-plan-usage" ]; then
               # Unix-like binary
               cd "$dir"
-              tar czf "../../release/glm-plan-usage-${target}.tar.gz" glm-plan-usage
+              tar czf "../../release/glm-plan-usage-${platform}.tar.gz" glm-plan-usage
               cd -
             elif [ -f "$dir/glm-plan-usage.exe" ]; then
               # Windows binary
               cd "$dir"
-              zip "../../release/glm-plan-usage-${target}.zip" glm-plan-usage.exe
+              zip "../../release/glm-plan-usage-${platform}.zip" glm-plan-usage.exe
               cd -
             fi
           done
 
+          # Show release files
           ls -lh release/
 
       - name: Create Release

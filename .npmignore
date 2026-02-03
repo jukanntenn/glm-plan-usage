@@ -34,3 +34,9 @@ test.sh
 
 # Config (sensitive data)
 config.toml
+
+# NPM publishing build artifacts (transient)
+npm-publish/
+
+# Old packaging scripts
+package.js

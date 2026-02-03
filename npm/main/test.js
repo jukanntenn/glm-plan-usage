@@ -6,7 +6,7 @@ console.log('Testing glm-plan-usage...\n');
 
 // Test 1: Help command
 console.log('Test 1: Help command');
-const helpResult = spawnSync('node', ['index.js', '--help'], {
+const helpResult = spawnSync('node', ['bin/glm-plan-usage.js', '--help'], {
   stdio: 'inherit',
   cwd: __dirname
 });
@@ -26,7 +26,7 @@ const input = JSON.stringify({
   transcript_path: '/tmp/test.json'
 });
 
-const runResult = spawnSync('node', ['index.js'], {
+const runResult = spawnSync('node', ['bin/glm-plan-usage.js'], {
   input: input,
   stdio: ['pipe', 'inherit', 'pipe'],
   cwd: __dirname

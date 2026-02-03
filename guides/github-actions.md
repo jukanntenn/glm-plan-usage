@@ -10,8 +10,7 @@ Runs on every push to `main` and on all pull requests.
 
 **Jobs:**
 - **test**: Runs `cargo test`, `cargo clippy`, and `cargo fmt --check` on stable and nightly Rust
-- **lint-npm**: Validates the `package.json` configuration
-- **version-sync**: Ensures `Cargo.toml` and `package.json` versions are synchronized
+- **version-sync**: Ensures `Cargo.toml` and `npm/main/package.json` versions are synchronized
 
 ### Release Workflow (`release.yml`)
 
@@ -20,7 +19,7 @@ Triggers on:
 - GitHub release creation
 
 **Jobs:**
-1. **sync-version**: Syncs the Cargo.toml version to package.json
+1. **sync-version**: Syncs the Cargo.toml version to npm/main/package.json
 2. **build**: Builds release binaries for all supported platforms:
    - `x86_64-unknown-linux-gnu` (Ubuntu)
    - `aarch64-unknown-linux-gnu` (ARM64 Linux, via cross)
@@ -65,7 +64,7 @@ git push origin main --tags
 ```
 
 The release workflow will:
-1. Automatically sync the version to `package.json`
+1. Automatically sync the version to `npm/main/package.json`
 2. Build binaries for all platforms
 3. Publish to npm
 4. Create a GitHub release with binary attachments
@@ -111,9 +110,9 @@ The ARM64 Linux build uses `cross-rs` which requires Docker. If the build fails:
 - Check if the version already exists on npm (delete or bump version)
 
 ### Version mismatch
-The CI will fail if `Cargo.toml` and `package.json` versions don't match.
+The CI will fail if `Cargo.toml` and `npm/main/package.json` versions don't match.
 - Bump version in `Cargo.toml`
-- The release workflow auto-syncs to `package.json`
+- The release workflow auto-syncs to `npm/main/package.json`
 
 ### Permission denied on npm publish
 Ensure your npm token has the correct permissions:

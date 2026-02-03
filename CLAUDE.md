@@ -44,9 +44,17 @@ glm-plan-usage/
 │       └── segments/
 │           ├── mod.rs       # Segment trait, SegmentData, SegmentStyle
 │           └── glm_usage.rs # GlmUsageSegment (API integration, caching)
-├── package.json             # NPM package configuration
-├── index.js                 # NPM entry point (spawn binary)
-├── install.js               # NPM install script (copy binary)
+├── npm/
+│   ├── main/
+│   │   ├── package.json       # Main npm package manifest
+│   │   ├── bin/
+│   │   │   └── glm-plan-usage.js  # NPM entry point
+│   │   ├── scripts/
+│   │   │   └── postinstall.js  # Install script
+│   │   └── test.js            # Test script
+│   ├── platforms/             # Platform-specific packages
+│   └── scripts/
+│       └── prepare-packages.js  # Package preparation script
 └── build-all.sh             # Cross-platform build script
 ```
 
@@ -253,7 +261,7 @@ Suggested test additions:
 
 Must update **both** files:
 1. `Cargo.toml` - `version` field in `[package]`
-2. `package.json` - `version` field
+2. `npm/main/package.json` - `version` field
 
 ### Build Targets
 

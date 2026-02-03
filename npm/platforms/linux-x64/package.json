@@ -1,0 +1,14 @@
+{
+  "name": "glm-plan-usage-linux-x64",
+  "version": "0.0.0",
+  "description": "Linux x64 binary for glm-plan-usage",
+  "files": ["glm-plan-usage"],
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jukanntenn/glm-plan-usage.git"
+  },
+  "author": "Alice <alice@example.com>",
+  "license": "MIT"
+}

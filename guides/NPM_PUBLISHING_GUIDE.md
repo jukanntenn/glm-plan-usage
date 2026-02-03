@@ -221,10 +221,10 @@ Expected sizes:
 - macOS: ~2.8MB
 - Windows: ~3.0MB
 
-### Step 4: Verify package.json
+### Step 4: Verify npm/main/package.json
 
 ```bash
-cat package.json | grep -A 5 '"files"'
+cat npm/main/package.json | grep -A 5 '"files"'
 ```
 
 Should include:
@@ -285,7 +285,7 @@ echo '{"model":{"id":"test"}}' | glm-plan-usage
 
 ### Step 1: Update Version
 
-Edit `package.json` and `Cargo.toml`:
+Edit `npm/main/package.json` and `Cargo.toml`:
 
 ```bash
 # Update version numbers
@@ -475,7 +475,7 @@ file $(which glm-plan-usage)
 npm view glm-plan-usage
 
 # If taken, choose a different name
-# Update package.json with scoped package
+# Update npm/main/package.json with scoped package
 npm publish --access public
 ```
 
@@ -547,7 +547,7 @@ then
     npm publish
 
     # 7. Tag and push
-    VERSION=$(node -p "require('./package.json').version")
+    VERSION=$(node -p "require('./npm/main/package.json').version")
     git tag -a "v$VERSION" -m "Release v$VERSION"
     git push origin "v$VERSION"
 
@@ -599,7 +599,7 @@ npm info glm-plan-usage
 ### Support
 
 For issues or questions:
-- GitHub: https://github.com/your-username/glm-plan-usage/issues
+- GitHub: https://github.com/jukanntenn/glm-plan-usage/issues
 - npm: https://www.npmjs.com/package/glm-plan-usage
 
 ---

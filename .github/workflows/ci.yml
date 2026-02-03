@@ -54,29 +54,6 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
-  lint-npm:
-    name: Lint NPM Package
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate package.json
-        run: |
-          # Check if package.json is valid
-          npm run help || true
-          echo "package.json is valid"
-
   version-sync:
     name: Check Version Sync
     runs-on: ubuntu-latest
@@ -85,16 +62,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check Cargo.toml and package.json versions match
+      - name: Check Cargo.toml and npm/main/package.json versions match
         run: |
           CARGO_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/' | tr -d '"')
-          NPM_VERSION=$(jq -r '.version' package.json)
+          NPM_VERSION=$(jq -r '.version' npm/main/package.json)
 
           echo "Cargo.toml version: $CARGO_VERSION"
-          echo "package.json version: $NPM_VERSION"
+          echo "npm/main/package.json version: $NPM_VERSION"
 
           if [ "$CARGO_VERSION" != "$NPM_VERSION" ]; then
-            echo "::error::Version mismatch: Cargo.toml ($CARGO_VERSION) != package.json ($NPM_VERSION)"
+            echo "::error::Version mismatch: Cargo.toml ($CARGO_VERSION) != npm/main/package.json ($NPM_VERSION)"
             exit 1
           fi
 

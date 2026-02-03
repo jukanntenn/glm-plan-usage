@@ -1,0 +1,42 @@
+{
+  "name": "glm-plan-usage",
+  "version": "0.0.1",
+  "description": "GLM usage status plugin for Claude Code",
+  "main": "bin/glm-plan-usage.js",
+  "bin": {
+    "glm-plan-usage": "./bin/glm-plan-usage.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "test": "node test.js"
+  },
+  "optionalDependencies": {
+    "glm-plan-usage-darwin-x64": "0.0.0",
+    "glm-plan-usage-darwin-arm64": "0.0.0",
+    "glm-plan-usage-linux-x64": "0.0.0",
+    "glm-plan-usage-linux-arm64": "0.0.0",
+    "glm-plan-usage-win32-x64": "0.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jukanntenn/glm-plan-usage.git"
+  },
+  "keywords": [
+    "claude-code",
+    "glm",
+    "zhipu",
+    "ai",
+    "usage-monitoring",
+    "status-bar"
+  ],
+  "author": "Alice <alice@example.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "README.md"
+  ]
+}
