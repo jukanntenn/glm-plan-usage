@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Input data from Claude Code (via stdin)
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct InputData {
     pub model: Option<ModelInfo>,
@@ -11,6 +12,7 @@ pub struct InputData {
     pub cost_info: Option<CostInfo>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ModelInfo {
     pub id: String,
@@ -18,12 +20,14 @@ pub struct ModelInfo {
     pub display_name: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct WorkspaceInfo {
     #[serde(rename = "current_dir")]
     pub current_dir: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct CostInfo {
     pub tokens: Option<f64>,
@@ -116,15 +120,6 @@ fn default_enabled() -> bool {
 pub enum AnsiColor {
     Rgb { r: u8, g: u8, b: u8 },
     C256 { c256: u8 },
-}
-
-impl AnsiColor {
-    pub fn to_ansi(&self) -> String {
-        match self {
-            AnsiColor::C256 { c256 } => format!("\x1b[38;5;{}m", c256),
-            AnsiColor::Rgb { r, g, b } => format!("\x1b[38;2;{};{};{}m", r, g, b),
-        }
-    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

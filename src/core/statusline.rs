@@ -8,7 +8,9 @@ pub struct StatusLineGenerator {
 
 impl StatusLineGenerator {
     pub fn new() -> Self {
-        Self { segments: Vec::new() }
+        Self {
+            segments: Vec::new(),
+        }
     }
 
     pub fn add_segment(mut self, segment: Box<dyn Segment>) -> Self {

@@ -20,11 +20,11 @@ impl GlmApiClient {
         let base_url = std::env::var("ANTHROPIC_BASE_URL")
             .unwrap_or_else(|_| "https://open.bigmodel.cn/api/anthropic".to_string());
 
-        let platform = Platform::detect_from_url(&base_url)
-            .ok_or(ApiError::PlatformDetectionFailed)?;
+        let platform =
+            Platform::detect_from_url(&base_url).ok_or(ApiError::PlatformDetectionFailed)?;
 
         // Fix base URL for ZHIPU platform (remove /anthropic suffix for monitor API)
-        let base_url = if platform == Platform::ZHIPU {
+        let base_url = if platform == Platform::Zhipu {
             base_url
                 .replace("/api/anthropic", "/api")
                 .replace("/anthropic", "")
@@ -74,7 +74,7 @@ impl GlmApiClient {
             .map_err(|e| ApiError::HttpError(e.to_string()))?;
 
         if response.status() != 200 {
-            return Err(ApiError::ApiError(format!(
+            return Err(ApiError::ApiResponse(format!(
                 "Status {}: {}",
                 response.status(),
                 response.status_text()
@@ -87,7 +87,7 @@ impl GlmApiClient {
             .map_err(|e| ApiError::ParseError(e.to_string()))?;
 
         if !quota_response.success {
-            return Err(ApiError::ApiError(quota_response.msg).into());
+            return Err(ApiError::ApiResponse(quota_response.msg).into());
         }
 
         // Extract token usage (TOKENS_LIMIT)

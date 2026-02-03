@@ -5,7 +5,7 @@ mod core;
 
 use clap::Parser;
 use config::{Config, ConfigLoader, InputData};
-use core::{StatusLineGenerator, GlmUsageSegment};
+use core::{GlmUsageSegment, StatusLineGenerator};
 
 fn main() {
     // Parse CLI arguments

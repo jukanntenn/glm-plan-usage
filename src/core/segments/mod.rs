@@ -2,7 +2,6 @@ pub mod glm_usage;
 
 use crate::config::{Config, InputData};
 
-
 /// Segment data for rendering
 #[derive(Debug, Clone)]
 pub struct SegmentData {

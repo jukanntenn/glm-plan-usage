@@ -288,7 +288,7 @@ jobs:
         with:
           files: release/*
           generate_release_notes: true
-          draft: false
+          draft: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -32,8 +32,12 @@ impl ConfigLoader for Config {
             .parent()
             .ok_or_else(|| anyhow::anyhow!("Invalid config path"))?;
 
-        fs::create_dir_all(config_dir)
-            .with_context(|| format!("Failed to create config directory: {}", config_dir.display()))?;
+        fs::create_dir_all(config_dir).with_context(|| {
+            format!(
+                "Failed to create config directory: {}",
+                config_dir.display()
+            )
+        })?;
 
         let default_config = Config::default();
         let toml_string = toml::to_string_pretty(&default_config)

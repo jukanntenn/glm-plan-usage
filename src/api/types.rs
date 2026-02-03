@@ -5,16 +5,16 @@ use thiserror::Error;
 /// Platform detection from base URL
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Platform {
-    ZAI,
-    ZHIPU,
+    Zai,
+    Zhipu,
 }
 
 impl Platform {
     pub fn detect_from_url(base_url: &str) -> Option<Self> {
         if base_url.contains("api.z.ai") {
-            Some(Platform::ZAI)
+            Some(Platform::Zai)
         } else if base_url.contains("bigmodel.cn") || base_url.contains("zhipu") {
-            Some(Platform::ZHIPU)
+            Some(Platform::Zhipu)
         } else {
             None
         }
@@ -31,7 +31,7 @@ pub enum ApiError {
     HttpError(String),
 
     #[error("API returned error: {0}")]
-    ApiError(String),
+    ApiResponse(String),
 
     #[error("Failed to parse response: {0}")]
     ParseError(String),
@@ -43,6 +43,7 @@ pub enum ApiError {
 /// Quota limit response (actual ZHIPU API format)
 #[derive(Debug, Deserialize)]
 pub struct QuotaLimitResponse {
+    #[allow(dead_code)]
     pub code: i32,
     pub msg: String,
     pub data: QuotaLimitData,
@@ -65,6 +66,7 @@ pub struct QuotaLimitItem {
 }
 
 /// Model usage response
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ModelUsageResponse {
     pub code: Option<i32>,
@@ -72,6 +74,7 @@ pub struct ModelUsageResponse {
     pub data: Option<ModelUsageData>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ModelUsageData {
     pub total: Option<i64>,
@@ -80,6 +83,7 @@ pub struct ModelUsageData {
 }
 
 /// Tool usage response
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ToolUsageResponse {
     pub code: Option<i32>,
@@ -87,6 +91,7 @@ pub struct ToolUsageResponse {
     pub data: Option<ToolUsageData>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ToolUsageData {
     pub total: Option<i64>,
@@ -101,6 +106,7 @@ pub struct UsageStats {
 
 /// Individual quota usage
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct QuotaUsage {
     pub used: i64,
     pub limit: i64,
@@ -113,4 +119,3 @@ impl fmt::Display for QuotaUsage {
         write!(f, "{}%", self.percentage)
     }
 }
-

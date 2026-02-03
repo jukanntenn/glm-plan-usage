@@ -85,8 +85,8 @@ impl GlmUsageSegment {
             .max(stats.mcp_usage.as_ref().map(|u| u.percentage).unwrap_or(0));
 
         let color_256 = match max_pct {
-            0..=79 => Some(109), // Green
-            80..=94 => Some(226), // Yellow
+            0..=79 => Some(109),   // Green
+            80..=94 => Some(226),  // Yellow
             95..=100 => Some(196), // Red
             _ => Some(109),
         };
