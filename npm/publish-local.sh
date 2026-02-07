@@ -193,18 +193,42 @@ echo ""
 # ========================================
 echo "=== Publish platform packages to local NPM registry ==="
 
+# Temporarily disable 'set -e' to allow continuing on publish failures
+set +e
+
 PUBLISHED_PLATFORMS=()
+FAILED_PLATFORMS=()
 for platform in darwin-x64 darwin-arm64 linux-x64 linux-x64-musl linux-arm64 linux-arm64-musl win32-x64; do
   if [ -d "$NPM_PUBLISH_DIR/$platform" ]; then
     echo "📦 Publishing @jukanntenn/glm-plan-usage-$platform"
-    (cd "$NPM_PUBLISH_DIR/$platform" && npm publish --registry "$LOCAL_REGISTRY" 2>/dev/null) && {
+    OUTPUT=$(cd "$NPM_PUBLISH_DIR/$platform" && npm publish --registry "$LOCAL_REGISTRY" 2>&1)
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -eq 0 ]; then
       echo "✅ Published @jukanntenn/glm-plan-usage-$platform"
       PUBLISHED_PLATFORMS+=("$platform")
-    } || {
-      echo "⚠ Failed to publish @jukanntenn/glm-plan-usage-$platform"
-    }
+    else
+      echo "❌ Failed to publish @jukanntenn/glm-plan-usage-$platform"
+      echo "   Error output:"
+      echo "$OUTPUT" | sed 's/^/   /'
+      FAILED_PLATFORMS+=("$platform")
+    fi
   fi
 done
+
+echo ""
+if [ ${#FAILED_PLATFORMS[@]} -gt 0 ]; then
+  echo "⚠️  Failed platforms:"
+  for platform in "${FAILED_PLATFORMS[@]}"; do
+    echo "   ✗ $platform"
+  done
+  echo ""
+  echo "💡 Tip: If packages already exist, unpublish them first:"
+  echo "   npm unpublish --force @jukanntenn/glm-plan-usage-<platform> --registry $LOCAL_REGISTRY"
+  echo ""
+fi
+
+# Re-enable 'set -e' for the rest of the script
+set -e
 
 echo ""
 
@@ -231,8 +255,12 @@ cd "$NPM_PUBLISH_DIR/main"
 # We just need to override the registry for local testing
 echo "📦 Publishing @jukanntenn/glm-plan-usage"
 
-# Temporarily set registry config for publish
-if npm publish --registry "$LOCAL_REGISTRY" --access public 2>/dev/null; then
+# Temporarily disable 'set -e' to capture publish errors
+set +e
+OUTPUT=$(npm publish --force --registry "$LOCAL_REGISTRY" --access public 2>&1)
+set -e
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
   echo "✅ Published @jukanntenn/glm-plan-usage"
   echo ""
   echo "🎉 NPM packages published successfully!"
@@ -247,7 +275,9 @@ if npm publish --registry "$LOCAL_REGISTRY" --access public 2>/dev/null; then
   echo ""
   echo "Install with: npm install -g @jukanntenn/glm-plan-usage --registry=$LOCAL_REGISTRY"
 else
-  echo "⚠ Failed to publish @jukanntenn/glm-plan-usage"
+  echo "❌ Failed to publish @jukanntenn/glm-plan-usage"
+  echo "   Error output:"
+  echo "$OUTPUT" | sed 's/^/   /'
   exit 1
 fi
 
