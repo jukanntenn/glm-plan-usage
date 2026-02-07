@@ -1,45 +1,45 @@
 # glm-plan-usage
 
-简体中文 | [English](README_en.md)
+[简体中文](README.md) | English
 
-一个用于 Claude Code 的插件，在状态栏显示 GLM（智谱/ZAI）算力套餐的使用量统计。
+A Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage statistics in the status bar.
 
-## 功能特性
+## Features
 
-- 📊 **实时使用量追踪**: 显示 Token 和 MCP 使用百分比
-- 🎨 **颜色警告提示**: 绿色 (0-79%)、黄色 (80-94%)、红色 (95-100%)
-- ⚡ **智能缓存**: 5 分钟缓存减少 API 调用
-- 🔍 **自动平台检测**: 支持 ZAI 和智谱平台
-- 🌍 **跨平台支持**: 支持 Windows、macOS 和 Linux
+- 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
+- 🎨 **Color-coded Warnings**: Green (0-79%), Yellow (80-94%), Red (95-100%)
+- ⚡ **Smart Caching**: 5-minute cache to reduce API calls
+- 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
+- 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
 
-## 安装
+## Installation
 
-### 通过 npm 安装（推荐）
+### Install via npm (Recommended)
 
 ```bash
 npm install -g @jukanntenn/glm-plan-usage
 ```
 
-如遇网络问题，可使用 npm 镜像加速安装：
+For users experiencing network issues, use npm mirror for faster installation:
 
 ```bash
 npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.com
 ```
 
-更新：
+Update:
 
 ```bash
 npm update -g @jukanntenn/glm-plan-usage
 ```
 
 <details>
-<summary>手动安装（点击展开）</summary>
+<summary>Manual Installation (click to expand)</summary>
 
-或者从 [Releases](https://github.com/jukanntenn/glm-plan-usage/releases) 手动下载：
+Or download manually from [Releases](https://github.com/jukanntenn/glm-plan-usage/releases):
 
 #### Linux
 
-#### 选项 1: 动态链接版本（推荐）
+#### Option 1: Dynamically Linked (Recommended)
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64.tar.gz
@@ -47,9 +47,9 @@ tar -xzf glm-plan-usage-linux-x64.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*系统要求: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)*
+*System requirements: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)*
 
-#### 选项 2: 静态链接版本（通用兼容）
+#### Option 2: Statically Linked (Universal Compatibility)
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64-musl.tar.gz
@@ -57,7 +57,7 @@ tar -xzf glm-plan-usage-linux-x64-musl.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*适用于任何 Linux 发行版（静态链接，无依赖）*
+*Works on any Linux distribution (statically linked, no dependencies)*
 
 #### macOS (Intel)
 
@@ -82,7 +82,7 @@ chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 #### Windows
 
 ```powershell
-# 创建目录并下载
+# Create directory and download
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\glm-plan-usage"
 Invoke-WebRequest -Uri "https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-windows-x64.zip" -OutFile "glm-plan-usage-windows-x64.zip"
 Expand-Archive -Path "glm-plan-usage-windows-x64.zip" -DestinationPath "."
@@ -91,7 +91,7 @@ Move-Item "glm-plan-usage.exe" "$env:USERPROFILE\.claude\glm-plan-usage\"
 
 </details>
 
-### 从源码构建
+### Build from Source
 
 ```bash
 git clone https://github.com/jukanntenn/glm-plan-usage.git
@@ -100,9 +100,9 @@ cargo build --release
 cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 ```
 
-## 配置
+## Configuration
 
-在 Claude Code 的 `settings.json` 中添加：
+Add to your Claude Code `settings.json`:
 
 **Linux/macOS:**
 
@@ -128,40 +128,40 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 }
 ```
 
-重启 Claude Code，状态栏将显示：
+Restart Claude Code, the status bar will display:
 
 ```text
 T:42% M:15%
-   │     └─ MCP 使用量（30 天窗口）
-   └─ Token 使用量（5 小时窗口）
+   │     └─ MCP usage (30-day window)
+   └─ Token usage (5-hour window)
 
 ```
 
-如果已在使用 [CCometixLine](https://github.com/Haleclipse/CCometixLine) 或其它类似插件，可创建脚本组合使用：
+If you are already using [CCometixLine](https://github.com/Haleclipse/CCometixLine) or other similar plugins, you can create scripts to combine them:
 
 **Linux/macOS:**
 
-`~/.claude/status-line-combined.sh` 脚本示例：
+`~/.claude/status-line-combined.sh` script example:
 
 ```bash
 #!/bin/bash
 
-# 从 stdin 读取 JSON 输入
+# Read JSON input from stdin
 INPUT=$(cat)
 
-# 使用相同输入运行两个命令
+# Run both commands with the same input
 CCLINE_OUTPUT=$(echo "$INPUT" | ~/.claude/ccline/ccline 2>/dev/null)
 GLM_OUTPUT=$(echo "$INPUT" | ~/.claude/glm-plan-usage/glm-plan-usage 2>/dev/null)
 
-# 构建组合输出
+# Build combined output
 OUTPUT=""
 
-# 如果 ccline 有输出，添加到输出
+# Add ccline output if available
 if [ -n "$CCLINE_OUTPUT" ]; then
     OUTPUT="$CCLINE_OUTPUT"
 fi
 
-# 如果 glm-plan-usage 有输出，添加到输出
+# Add glm-plan-usage output if available
 if [ -n "$GLM_OUTPUT" ]; then
     if [ -n "$OUTPUT" ]; then
         OUTPUT="$OUTPUT | $GLM_OUTPUT"
@@ -170,15 +170,15 @@ if [ -n "$GLM_OUTPUT" ]; then
     fi
 fi
 
-# 打印组合输出
+# Print combined output
 if [ -n "$OUTPUT" ]; then
     printf "%s" "$OUTPUT"
 fi
 ```
 
-赋予脚本执行权限：`chmod +x ~/.claude/status-line-combined.sh`
+Add execution permission: `chmod +x ~/.claude/status-line-combined.sh`
 
-在 Claude Code 的 `settings.json` 中配置：
+Configure in Claude Code `settings.json`:
 
 ```json
 {
@@ -192,25 +192,25 @@ fi
 
 **Windows (PowerShell):**
 
-`%USERPROFILE%\.claude\status-line-combined.ps1` 脚本示例：
+`%USERPROFILE%\.claude\status-line-combined.ps1` script example:
 
 ```powershell
-# 从 stdin 读取 JSON 输入
+# Read JSON input from stdin
 $InputString = [Console]::In.ReadToEnd()
 
-# 使用相同输入运行两个命令
+# Run both commands with the same input
 $CclineOutput = $InputString | & "$env:USERPROFILE\.claude\ccline\ccline.exe" 2>$null
 $GlmOutput = $InputString | & "$env:USERPROFILE\.claude\glm-plan-usage\glm-plan-usage.exe" 2>$null
 
-# 构建组合输出
+# Build combined output
 $Output = ""
 
-# 如果 ccline 有输出，添加到输出
+# Add ccline output if available
 if (-not [string]::IsNullOrEmpty($CclineOutput)) {
     $Output = $CclineOutput
 }
 
-# 如果 glm-plan-usage 有输出，添加到输出
+# Add glm-plan-usage output if available
 if (-not [string]::IsNullOrEmpty($GlmOutput)) {
     if (-not [string]::IsNullOrEmpty($Output)) {
         $Output = "$Output | $GlmOutput"
@@ -219,15 +219,15 @@ if (-not [string]::IsNullOrEmpty($GlmOutput)) {
     }
 }
 
-# 打印组合输出
+# Print combined output
 if (-not [string]::IsNullOrEmpty($Output)) {
     Write-Host -NoNewline $Output
 }
 ```
 
-PowerShell 中赋予脚本执行权限：`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+Grant script execution permission in PowerShell: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
-在 Claude Code 的 `settings.json` 中配置：
+Configure in Claude Code `settings.json`:
 
 ```json
 {
@@ -239,9 +239,9 @@ PowerShell 中赋予脚本执行权限：`Set-ExecutionPolicy -Scope CurrentUser
 }
 ```
 
-## 环境变量
+## Environment Variables
 
-**注意**：这些变量通常已在 Claude Code 的 `settings.json` 中配置。如果没有，可以手动设置：
+**Note:** These variables are typically already configured in your Claude Code `settings.json`. If not, you can set them manually:
 
 **Linux/macOS:**
 
@@ -264,6 +264,6 @@ $env:ANTHROPIC_AUTH_TOKEN="your-token-here"
 $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
 
-## 许可证
+## License
 
 MIT

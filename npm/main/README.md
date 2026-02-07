@@ -1,77 +1,81 @@
-# GLM Plan Usage
+# @jukanntenn/glm-plan-usage
 
-GLM usage status plugin for Claude Code.
+GLM Plan Usage - StatusLine plugin for Claude Code
 
 ## Installation
 
 ```bash
-npm install -g glm-plan-usage
+npm install -g @jukanntenn/glm-plan-usage
 ```
 
-## Setup for Claude Code
+For users experiencing network issues, use npm mirror for faster installation:
 
-Add the following to your `~/.config/claude-code/settings.json`:
+```bash
+npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.com
+```
+
+## Features
+
+- 📊 **Monitor**: Display GLM (ZHIPU/ZAI) coding plan usage statistics
+- 🌍 **Cross-platform**: Works on Windows, macOS, and Linux
+- 📦 **Easy installation**: One command via npm
+- 🎨 **Beautiful**: Color-coded warning levels based on usage percentage
+
+## Usage
+
+Add to your Claude Code `settings.json`:
+
+**Linux/macOS:**
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "glm-plan-usage"
+    "command": "~/.claude/glm-plan-usage/glm-plan-usage",
+    "padding": 0
   }
 }
 ```
 
-## Configuration
+**Windows:**
 
-Create a configuration file at `~/.claude/glm-plan-usage/config.toml`:
-
-```toml
-# GLM API Configuration
-[api]
-# Base URL for GLM API (auto-detected from environment)
-# base_url = "https://open.bigmodel.cn/api/anthropic"
-
-# Display Configuration
-[display]
-# Show remaining token count
-show_remaining = true
-# Show percentage used
-show_percentage = true
-# Show color-coded warnings
-colorize = true
-
-# Cache Configuration
-[cache]
-# Enable caching of API responses
-enabled = true
-# Cache TTL in seconds
-ttl_seconds = 300
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "%USERPROFILE%\\.claude\\glm-plan-usage\\glm-plan-usage.exe",
+    "padding": 0
+  }
+}
 ```
 
 ## Environment Variables
 
-- `ANTHROPIC_AUTH_TOKEN`: Your GLM API token
-- `ANTHROPIC_BASE_URL`: Base URL for GLM API (e.g., `https://open.bigmodel.cn/api/anthropic`)
+**Note:** These variables are typically already configured in your Claude Code `settings.json`. If not, you can set them manually:
 
-## CLI Usage
+**Linux/macOS:**
 
 ```bash
-# Initialize default configuration
-glm-plan-usage --init
-
-# Show verbose error messages
-glm-plan-usage --verbose
-
-# Disable cache for this run
-glm-plan-usage --no-cache
+export ANTHROPIC_AUTH_TOKEN="your-token-here"
+export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
 
-## Platforms Supported
+**Windows (Command Prompt):**
 
-- macOS (x64, ARM64/Apple Silicon)
-- Linux (x64, ARM64)
-- Windows (x64)
+```cmd
+set ANTHROPIC_AUTH_TOKEN=your-token-here
+set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
+```
 
-## License
+**Windows (PowerShell):**
 
-MIT
+```powershell
+$env:ANTHROPIC_AUTH_TOKEN="your-token-here"
+$env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+```
+
+## More Information
+
+- GitHub: https://github.com/jukanntenn/glm-plan-usage
+- Issues: https://github.com/jukanntenn/glm-plan-usage/issues
+- License: MIT

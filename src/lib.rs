@@ -1,4 +1,4 @@
-//! GLM Usage Status Plugin for Claude Code
+//! GLM Plan Usage Plugin for Claude Code
 //!
 //! This plugin displays GLM (ZHIPU/ZAI) coding plan usage statistics
 //! in the Claude Code status bar.

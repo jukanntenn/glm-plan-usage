@@ -1,12 +1,12 @@
 {
-  "name": "@jukanntenn/glm-plan-usage-darwin-arm64",
+  "name": "@jukanntenn/glm-plan-usage-linux-arm64-musl",
   "version": "0.0.0",
-  "description": "macOS ARM64 binary for GLM Plan Usage",
+  "description": "Linux ARM64 binary (musl) for GLM Plan Usage",
   "files": [
     "glm-plan-usage"
   ],
   "os": [
-    "darwin"
+    "linux"
   ],
   "cpu": [
     "arm64"

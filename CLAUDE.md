@@ -28,8 +28,8 @@ This is a Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage sta
 glm-plan-usage/
 ├── src/
 │   ├── main.rs              # Entry point, stdin parsing, CLI handling
-│   ├── cli.rs               # Command-line argument definitions
-│   ├── lib.rs               # Library interface
+│   ├── cli.rs               # Command-line argument definitions (Args struct)
+│   ├── lib.rs               # Library interface, module exports
 │   ├── config/
 │   │   ├── mod.rs           # Config module exports
 │   │   ├── types.rs         # All configuration structs (InputData, Config, etc.)
@@ -46,13 +46,19 @@ glm-plan-usage/
 │           └── glm_usage.rs # GlmUsageSegment (API integration, caching)
 ├── npm/
 │   ├── main/
-│   │   ├── package.json       # Main npm package manifest
+│   │   ├── package.json       # Main npm package (@jukanntenn/glm-plan-usage)
 │   │   ├── bin/
 │   │   │   └── glm-plan-usage.js  # NPM entry point
-│   │   ├── scripts/
-│   │   │   └── postinstall.js  # Install script
-│   │   └── test.js            # Test script
-│   ├── platforms/             # Platform-specific packages
+│   │   └── scripts/
+│   │       └── postinstall.js  # Install script
+│   ├── platforms/             # Platform-specific binary packages
+│   │   ├── darwin-arm64/
+│   │   ├── darwin-x64/
+│   │   ├── linux-x64/
+│   │   ├── linux-x64-musl/
+│   │   ├── linux-arm64/
+│   │   ├── linux-arm64-musl/
+│   │   └── win32-x64/
 │   └── scripts/
 │       └── prepare-packages.js  # Package preparation script
 └── build-all.sh             # Cross-platform build script
@@ -84,6 +90,7 @@ glm-plan-usage/
 
 | Module | File | Responsibility |
 |--------|------|-----------------|
+| **CLI Args** | `cli.rs` | Command-line argument definitions using clap derive (Args struct) |
 | **CLI Handler** | `main.rs` | Parse args, handle `--init`, apply CLI overrides |
 | **Config Loader** | `config/loader.rs` | Load TOML from `~/.claude/glm-plan-usage/config.toml` |
 | **API Client** | `api/client.rs` | HTTP requests to GLM API with Bearer auth |
@@ -180,7 +187,7 @@ fn default_my_setting() -> bool {
 - Invalid stdin → Continue with empty `InputData`
 - No env vars → Return `None` from segment
 
-Pattern used in `glm_usage.rs:50-56`:
+Pattern used in `glm_usage.rs:50-52`:
 
 ```rust
 Err(_) => {
@@ -206,7 +213,7 @@ export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 
 The `GlmApiClient::from_env()` reads these and adds `Authorization: Bearer {token}` header.
 
-**Important**: ZHIPU platform URL transformation (client.rs:26-33):
+**Important**: ZHIPU platform URL transformation (client.rs:27-33):
 ```
 https://open.bigmodel.cn/api/anthropic
     → https://open.bigmodel.cn/api/monitor/usage/quota/limit
@@ -269,24 +276,15 @@ Run `./build-all.sh` to build for all platforms:
 
 ```
 - x86_64-unknown-linux-gnu
+- x86_64-unknown-linux-musl
+- aarch64-unknown-linux-gnu
+- aarch64-unknown-linux-musl
 - x86_64-apple-darwin
 - aarch64-apple-darwin
 - x86_64-pc-windows-msvc
 ```
 
 Binaries are placed in `lib/` for NPM packaging.
-
-### NPM Publishing
-
-```bash
-# Build and package
-npm run package
-
-# Publish (requires npm login)
-npm publish
-```
-
-The `prepublishOnly` script automatically builds Rust binaries.
 
 ### File Locations After Installation
 

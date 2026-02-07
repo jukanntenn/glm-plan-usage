@@ -1,14 +1,20 @@
 {
-  "name": "glm-plan-usage-darwin-x64",
+  "name": "@jukanntenn/glm-plan-usage-darwin-x64",
   "version": "0.0.0",
-  "description": "macOS Intel x64 binary for glm-plan-usage",
-  "files": ["glm-plan-usage"],
-  "os": ["darwin"],
-  "cpu": ["x64"],
+  "description": "macOS x64 binary for GLM Plan Usage",
+  "files": [
+    "glm-plan-usage"
+  ],
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/jukanntenn/glm-plan-usage.git"
+    "url": "git+https://github.com/jukanntenn/glm-plan-usage.git"
   },
-  "author": "Alice <alice@example.com>",
+  "author": "Alice",
   "license": "MIT"
 }

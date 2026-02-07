@@ -2,7 +2,6 @@
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
 
 # IDEs
 .idea/
@@ -18,3 +17,6 @@ Thumbs.db
 # Config (contains sensitive data)
 config.toml
 lib/
+
+# NPM publish (generated during release)
+npm-publish/

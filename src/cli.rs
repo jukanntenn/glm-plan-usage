@@ -1,9 +1,9 @@
 use clap::Parser;
 
-/// GLM usage status plugin for Claude Code
+/// GLM plan usage plugin for Claude Code
 #[derive(Parser, Debug)]
 #[command(name = "glm-plan-usage")]
-#[command(about = "Display GLM usage statistics in Claude Code status bar", long_about = None)]
+#[command(about = "Display GLM plan usage statistics in Claude Code status bar", long_about = None)]
 pub struct Args {
     /// Initialize configuration file
     #[arg(long)]
