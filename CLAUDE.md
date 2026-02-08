@@ -245,6 +245,28 @@ if config.cache.enabled {
 | 80-94% | 226 (Yellow) | `\x1b[38;5;226m` |
 | 95-100% | 196 (Red) | `\x1b[38;5;196m` |
 
+### Output Format
+
+The status bar displays:
+- **Token Usage**: `T:32% (13.05M/40.00M) ⏱️1:44`
+  - Percentage used
+  - Actual usage/limit (auto-formatted in M/K units)
+  - Countdown to reset (HH:MM format)
+- **MCP Usage**: `M:20/100`
+  - Raw count (used/limit)
+
+**Token Unit Formatting:**
+- ≥ 1,000,000: Shows "M" (millions), e.g., "13.05M"
+- ≥ 10,000: Shows "K" (thousands), e.g., "250.5K"
+- < 10,000: Shows raw count, e.g., "5000"
+
+**Countdown Behavior:**
+- Only TOKENS_LIMIT shows countdown (from API `nextResetTime` field)
+- TIME_LIMIT (MCP) has no countdown
+- Format: HH:MM (e.g., "1:44" = 1 hour 44 minutes)
+- Expired: "0:00"
+- API missing field: "--:--"
+
 ## Testing
 
 ### Run Tests
