@@ -63,6 +63,8 @@ pub struct QuotaLimitItem {
     #[serde(rename = "currentValue")]
     pub current_value: i64,
     pub percentage: i32,
+    #[serde(rename = "nextResetTime", default)]
+    pub next_reset_time: Option<i64>, // Millisecond timestamp
 }
 
 /// Model usage response
@@ -112,6 +114,7 @@ pub struct QuotaUsage {
     pub limit: i64,
     pub percentage: u8,
     pub time_window: String,
+    pub reset_at: Option<i64>, // Second-level timestamp (converted from ms)
 }
 
 impl fmt::Display for QuotaUsage {

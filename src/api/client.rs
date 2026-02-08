@@ -101,6 +101,7 @@ impl GlmApiClient {
                 limit: item.usage,
                 percentage: item.percentage.clamp(0, 100) as u8,
                 time_window: "5h".to_string(),
+                reset_at: item.next_reset_time.map(|ms| ms / 1000),
             });
 
         // Extract tool usage (TIME_LIMIT)
@@ -114,6 +115,7 @@ impl GlmApiClient {
                 limit: item.usage,
                 percentage: item.percentage.clamp(0, 100) as u8,
                 time_window: "30d".to_string(),
+                reset_at: item.next_reset_time.map(|ms| ms / 1000),
             });
 
         Ok(UsageStats {
