@@ -7,6 +7,9 @@ use std::time::{Duration, Instant};
 
 /// Format token count with appropriate units (M/K/raw)
 fn format_tokens(count: i64) -> String {
+    if count < 0 {
+        return "N/A".to_string();
+    }
     if count >= 1_000_000 {
         format!("{:.2}M", count as f64 / 1_000_000.0)
     } else if count >= 10_000 {
