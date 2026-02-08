@@ -22,10 +22,7 @@ fn format_tokens(count: i64) -> String {
 
 /// Calculate countdown to reset time and format as HH:MM
 fn format_countdown(reset_at: i64) -> Option<String> {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .ok()?
-        .as_secs() as i64;
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs() as i64;
 
     let remaining = reset_at.saturating_sub(now);
 
@@ -96,15 +93,12 @@ impl GlmUsageSegment {
 
         // Token usage with countdown
         if let Some(token) = &stats.token_usage {
-            let countdown = token.reset_at
+            let countdown = token
+                .reset_at
                 .and_then(format_countdown)
                 .unwrap_or_else(|| "--:--".to_string());
 
-            parts.push(format!(
-                "🪙 {}% (⌛️ {})",
-                token.percentage,
-                countdown
-            ));
+            parts.push(format!("🪙 {}% (⌛️ {})", token.percentage, countdown));
         }
 
         // MCP raw count
