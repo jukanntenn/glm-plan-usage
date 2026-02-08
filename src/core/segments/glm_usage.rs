@@ -100,23 +100,21 @@ impl GlmUsageSegment {
                 .unwrap_or_else(|| "--:--".to_string());
 
             parts.push(format!(
-                "T:{}% ({}/{}) ⏱️{}",
+                "🪙 {}% (⌛️ {})",
                 token.percentage,
-                format_tokens(token.used),
-                format_tokens(token.limit),
                 countdown
             ));
         }
 
         // MCP raw count
         if let Some(mcp) = &stats.mcp_usage {
-            parts.push(format!("M:{}/{}", mcp.used, mcp.limit));
+            parts.push(format!("🌐 {}/{}", mcp.used, mcp.limit));
         }
 
         if parts.is_empty() {
             String::new()
         } else {
-            parts.join(" ")
+            parts.join(" · ")
         }
     }
 
