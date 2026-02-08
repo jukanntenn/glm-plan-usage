@@ -93,12 +93,24 @@ impl GlmUsageSegment {
     fn format_stats(stats: &UsageStats) -> String {
         let mut parts = Vec::new();
 
+        // Token usage with countdown
         if let Some(token) = &stats.token_usage {
-            parts.push(format!("T:{}%", token.percentage));
+            let countdown = token.reset_at
+                .and_then(|t| format_countdown(t))
+                .unwrap_or_else(|| "--:--".to_string());
+
+            parts.push(format!(
+                "T:{}% ({}/{}) ⏱️{}",
+                token.percentage,
+                format_tokens(token.used),
+                format_tokens(token.limit),
+                countdown
+            ));
         }
 
+        // MCP raw count
         if let Some(mcp) = &stats.mcp_usage {
-            parts.push(format!("M:{}%", mcp.percentage));
+            parts.push(format!("M:{}/{}", mcp.used, mcp.limit));
         }
 
         if parts.is_empty() {
