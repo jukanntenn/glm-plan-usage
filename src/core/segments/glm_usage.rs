@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Format token count with appropriate units (M/K/raw)
+#[allow(dead_code)]
 fn format_tokens(count: i64) -> String {
     if count < 0 {
         return "N/A".to_string();
@@ -96,7 +97,7 @@ impl GlmUsageSegment {
         // Token usage with countdown
         if let Some(token) = &stats.token_usage {
             let countdown = token.reset_at
-                .and_then(|t| format_countdown(t))
+                .and_then(format_countdown)
                 .unwrap_or_else(|| "--:--".to_string());
 
             parts.push(format!(
