@@ -3,7 +3,7 @@ use crate::api::{GlmApiClient, UsageStats};
 use crate::config::{Config, InputData};
 use crate::core::segments::{SegmentData, SegmentStyle};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Format token count with appropriate units (M/K/raw)
 fn format_tokens(count: i64) -> String {
@@ -17,6 +17,25 @@ fn format_tokens(count: i64) -> String {
     } else {
         format!("{}", count)
     }
+}
+
+/// Calculate countdown to reset time and format as HH:MM
+fn format_countdown(reset_at: i64) -> Option<String> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()?
+        .as_secs() as i64;
+
+    let remaining = reset_at.saturating_sub(now);
+
+    if remaining <= 0 {
+        return Some("0:00".to_string());
+    }
+
+    let hours = remaining / 3600;
+    let minutes = (remaining % 3600) / 60;
+
+    Some(format!("{}:{:02}", hours, minutes))
 }
 
 /// GLM usage segment with caching
