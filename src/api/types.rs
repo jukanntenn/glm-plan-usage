@@ -59,8 +59,9 @@ pub struct QuotaLimitData {
 pub struct QuotaLimitItem {
     #[serde(rename = "type")]
     pub quota_type: String,
+    #[serde(default)]
     pub usage: i64,
-    #[serde(rename = "currentValue")]
+    #[serde(rename = "currentValue", default)]
     pub current_value: i64,
     pub percentage: i32,
     #[serde(rename = "nextResetTime", default)]
