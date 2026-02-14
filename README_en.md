@@ -4,6 +4,8 @@
 
 A Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage statistics in the status bar.
 
+![demo](screenshots/demo.png)
+
 ## Features
 
 - 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
@@ -131,9 +133,11 @@ Add to your Claude Code `settings.json`:
 Restart Claude Code, the status bar will display:
 
 ```text
-T:42% M:15%
-   │     └─ MCP usage (30-day window)
-   └─ Token usage (5-hour window)
+🪙 32% (⌛️ 1:44) · 🌐 20/100
+   │  │           │     └─ MCP usage (used/total)
+   │  │           └─ Separator
+   │  └─ Token countdown (hours:minutes)
+   └─ Token usage percentage
 
 ```
 

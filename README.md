@@ -4,6 +4,8 @@
 
 一个用于 Claude Code 的插件，在状态栏显示 GLM（智谱/ZAI）算力套餐的使用量统计。
 
+![demo](screenshots/demo.png)
+
 ## 功能特性
 
 - 📊 **实时使用量追踪**: 显示 Token 和 MCP 使用百分比
@@ -131,9 +133,11 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 重启 Claude Code，状态栏将显示：
 
 ```text
-T:42% M:15%
-   │     └─ MCP 使用量（30 天窗口）
-   └─ Token 使用量（5 小时窗口）
+🪙 32% (⌛️ 1:44) · 🌐 20/100
+   │  │           │     └─ MCP 使用量（已用/总计）
+   │  │           └─ 分隔符
+   │  └─ Token 倒计时（小时:分钟）
+   └─ Token 使用百分比
 
 ```
 
