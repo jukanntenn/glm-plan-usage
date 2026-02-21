@@ -2,4 +2,7 @@ mod loader;
 mod types;
 
 pub use loader::ConfigLoader;
-pub use types::{Config, InputData};
+#[allow(unused_imports)]
+pub use types::{
+    ApiConfig, CacheConfig, Config, DisplayMode, IconConfig, InputData, SegmentConfig, StyleConfig,
+};

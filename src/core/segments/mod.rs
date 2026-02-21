@@ -1,27 +1,41 @@
-pub mod glm_usage;
+pub mod mcp_usage;
+pub mod token_usage;
+pub mod weekly_usage;
 
 use crate::config::{Config, InputData};
+use std::collections::HashMap;
 
-/// Segment data for rendering
 #[derive(Debug, Clone)]
 pub struct SegmentData {
-    pub text: String,
-    pub style: SegmentStyle,
+    pub primary: String,
+    pub secondary: String,
+    pub metadata: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct SegmentStyle {
-    pub color: Option<(u8, u8, u8)>,
-    pub color_256: Option<u8>,
-    pub bold: bool,
+impl SegmentData {
+    pub fn new(primary: impl Into<String>) -> Self {
+        Self {
+            primary: primary.into(),
+            secondary: String::new(),
+            metadata: HashMap::new(),
+        }
+    }
+
+    pub fn with_secondary(mut self, secondary: impl Into<String>) -> Self {
+        self.secondary = secondary.into();
+        self
+    }
+
+    pub fn with_metadata(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.metadata.insert(key.into(), value.into());
+        self
+    }
 }
 
-/// Segment trait
+#[allow(dead_code)]
 pub trait Segment: Send + Sync {
-    /// Get segment identifier
     fn id(&self) -> &str;
 
-    /// Check if segment is enabled
     fn is_enabled(&self, config: &Config) -> bool {
         config
             .segments
@@ -31,6 +45,9 @@ pub trait Segment: Send + Sync {
             .unwrap_or(false)
     }
 
-    /// Collect segment data
     fn collect(&self, input: &InputData, config: &Config) -> Option<SegmentData>;
 }
+
+pub use mcp_usage::McpUsageSegment;
+pub use token_usage::TokenUsageSegment;
+pub use weekly_usage::WeeklyUsageSegment;

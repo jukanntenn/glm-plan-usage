@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 /// Input data from Claude Code (via stdin)
 #[allow(dead_code)]
@@ -34,6 +35,45 @@ pub struct CostInfo {
     pub cost: Option<f64>,
 }
 
+/// Display mode for icons and styling
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum DisplayMode {
+    #[default]
+    Auto,
+    Emoji,
+    Ascii,
+}
+
+/// Cached detection result for Auto mode
+static DETECTED_MODE: OnceLock<DisplayMode> = OnceLock::new();
+
+/// Detect terminal capabilities to determine best display mode
+fn detect_display_mode() -> DisplayMode {
+    // Windows without modern terminal
+    if cfg!(windows) {
+        let has_wt = std::env::var("WT_SESSION").is_ok();
+        let has_vscode = std::env::var("TERM_PROGRAM").as_deref() == Ok("vscode");
+        if !has_wt && !has_vscode {
+            return DisplayMode::Ascii;
+        }
+    }
+    // Known-bad Unix terminals
+    if let Ok(term) = std::env::var("TERM") {
+        if term == "dumb" || term == "linux" || term == "screen" {
+            return DisplayMode::Ascii;
+        }
+    }
+    // Non-UTF-8 locale on Unix
+    if cfg!(unix) {
+        let lang = std::env::var("LANG").unwrap_or_default();
+        if !lang.contains("UTF-8") && !lang.contains("utf8") {
+            return DisplayMode::Ascii;
+        }
+    }
+    DisplayMode::Emoji
+}
+
 /// Plugin configuration
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
@@ -51,7 +91,11 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             style: StyleConfig::default(),
-            segments: vec![SegmentConfig::default_glm_usage()],
+            segments: vec![
+                SegmentConfig::token_usage(),
+                SegmentConfig::weekly_usage(),
+                SegmentConfig::mcp_usage(),
+            ],
             api: ApiConfig::default(),
             cache: CacheConfig::default(),
         }
@@ -60,23 +104,30 @@ impl Default for Config {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct StyleConfig {
-    #[serde(default = "default_style_mode")]
-    pub mode: String,
+    #[serde(default)]
+    pub mode: DisplayMode,
     #[serde(default = "default_separator")]
     pub separator: String,
+}
+
+impl StyleConfig {
+    /// Resolve Auto mode to concrete Emoji or Ascii at runtime (cached)
+    pub fn resolved_mode(&self) -> DisplayMode {
+        match self.mode {
+            DisplayMode::Auto => *DETECTED_MODE.get_or_init(detect_display_mode),
+            DisplayMode::Emoji => DisplayMode::Emoji,
+            DisplayMode::Ascii => DisplayMode::Ascii,
+        }
+    }
 }
 
 impl Default for StyleConfig {
     fn default() -> Self {
         Self {
-            mode: default_style_mode(),
+            mode: DisplayMode::default(),
             separator: default_separator(),
         }
     }
-}
-
-fn default_style_mode() -> String {
-    "plain".to_string()
 }
 
 fn default_separator() -> String {
@@ -89,24 +140,36 @@ pub struct SegmentConfig {
     #[serde(default = "default_enabled")]
     pub enabled: bool,
     #[serde(default)]
-    pub colors: HashMap<String, AnsiColor>,
+    pub icon: IconConfig,
     #[serde(default)]
-    pub styles: HashMap<String, bool>,
+    pub options: HashMap<String, serde_json::Value>,
 }
 
 impl SegmentConfig {
-    pub fn default_glm_usage() -> Self {
-        let mut colors = HashMap::new();
-        colors.insert("text".to_string(), AnsiColor::C256 { c256: 109 });
-
-        let mut styles = HashMap::new();
-        styles.insert("text_bold".to_string(), true);
-
+    pub fn token_usage() -> Self {
         Self {
-            id: "glm_usage".to_string(),
+            id: "token_usage".to_string(),
             enabled: true,
-            colors,
-            styles,
+            icon: IconConfig::new("🪙", "$"),
+            options: HashMap::new(),
+        }
+    }
+
+    pub fn mcp_usage() -> Self {
+        Self {
+            id: "mcp_usage".to_string(),
+            enabled: true,
+            icon: IconConfig::new("🌐", "#"),
+            options: HashMap::new(),
+        }
+    }
+
+    pub fn weekly_usage() -> Self {
+        Self {
+            id: "weekly_usage".to_string(),
+            enabled: true,
+            icon: IconConfig::new("🗓️", "*"),
+            options: HashMap::new(),
         }
     }
 }
@@ -115,11 +178,27 @@ fn default_enabled() -> bool {
     true
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
-#[serde(untagged)]
-pub enum AnsiColor {
-    Rgb { r: u8, g: u8, b: u8 },
-    C256 { c256: u8 },
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IconConfig {
+    #[serde(default)]
+    pub emoji: String,
+    #[serde(default)]
+    pub ascii: String,
+}
+
+impl IconConfig {
+    pub fn new(emoji: &str, ascii: &str) -> Self {
+        Self {
+            emoji: emoji.to_string(),
+            ascii: ascii.to_string(),
+        }
+    }
+}
+
+impl Default for IconConfig {
+    fn default() -> Self {
+        Self::new("", "")
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

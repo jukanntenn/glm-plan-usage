@@ -7,6 +7,8 @@ pub trait ConfigLoader {
     fn load() -> Result<Config>;
     fn init_config() -> Result<PathBuf>;
     fn config_path() -> PathBuf;
+    fn print(&self) -> Result<()>;
+    fn check(&self) -> Result<()>;
 }
 
 impl ConfigLoader for Config {
@@ -39,11 +41,9 @@ impl ConfigLoader for Config {
             )
         })?;
 
-        let default_config = Config::default();
-        let toml_string = toml::to_string_pretty(&default_config)
-            .context("Failed to serialize default config")?;
+        let config_template = include_str!("../config_template.toml");
 
-        fs::write(&config_path, toml_string)
+        fs::write(&config_path, config_template)
             .with_context(|| format!("Failed to write config file: {}", config_path.display()))?;
 
         Ok(config_path)
@@ -55,5 +55,39 @@ impl ConfigLoader for Config {
             .join(".claude")
             .join("glm-plan-usage")
             .join("config.toml")
+    }
+
+    fn print(&self) -> Result<()> {
+        let content = toml::to_string_pretty(self).context("Failed to serialize config")?;
+        println!("{}", content);
+        Ok(())
+    }
+
+    fn check(&self) -> Result<()> {
+        use std::collections::HashSet;
+
+        if self.segments.is_empty() {
+            anyhow::bail!("No segments configured");
+        }
+
+        let mut seen_ids: HashSet<&str> = HashSet::new();
+        for segment in &self.segments {
+            if !seen_ids.insert(segment.id.as_str()) {
+                anyhow::bail!("Duplicate segment ID: {}", segment.id);
+            }
+        }
+
+        let valid_ids = ["token_usage", "weekly_usage", "mcp_usage"];
+        for segment in &self.segments {
+            if !valid_ids.contains(&segment.id.as_str()) {
+                anyhow::bail!(
+                    "Invalid segment ID: {}. Valid IDs: {:?}",
+                    segment.id,
+                    valid_ids
+                );
+            }
+        }
+
+        Ok(())
     }
 }

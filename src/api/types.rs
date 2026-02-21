@@ -60,6 +60,9 @@ pub struct QuotaLimitItem {
     #[serde(rename = "type")]
     pub quota_type: String,
     #[serde(default)]
+    #[allow(dead_code)]
+    pub unit: i64,
+    #[serde(default)]
     pub usage: i64,
     #[serde(rename = "currentValue", default)]
     pub current_value: i64,
@@ -104,6 +107,7 @@ pub struct ToolUsageData {
 #[derive(Debug, Clone)]
 pub struct UsageStats {
     pub token_usage: Option<QuotaUsage>,
+    pub weekly_usage: Option<QuotaUsage>,
     pub mcp_usage: Option<QuotaUsage>,
 }
 

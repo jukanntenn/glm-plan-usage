@@ -1,0 +1,213 @@
+# GLM Plan Usage Configuration
+# This file configures the GLM plan usage plugin for Claude Code
+#
+# Location: ~/.claude/glm-plan-usage/config.toml
+# Generate with: glm-plan-usage init
+# Validate with: glm-plan-usage check
+# Print current: glm-plan-usage print
+
+# =============================================================================
+# STYLE CONFIGURATION
+# =============================================================================
+# Controls the overall appearance of the status line
+
+[style]
+# Display mode: "auto", "emoji", or "ascii"
+# - auto: Auto-detect terminal capabilities (default)
+# - emoji: Use emoji icons (🪙 🌐)
+# - ascii: Use ASCII characters ($ #)
+mode = "auto"
+
+# Separator between segments (supports ANSI escape codes)
+separator = " | "
+
+# =============================================================================
+# SEGMENTS CONFIGURATION
+# =============================================================================
+# Each segment displays a specific usage metric
+# Segments are displayed in the order they appear in this array
+
+[[segments]]
+# Token Usage Segment
+# Shows your token quota usage with percentage and countdown to reset
+id = "token_usage"
+
+# Enable or disable this segment
+enabled = true
+
+# Icon configuration
+[segments.icon]
+emoji = "🪙"
+ascii = "$"
+
+# Segment-specific options
+[segments.options]
+# Show timer (clock or countdown) to quota reset
+# true: Display timer (default)
+# false: Hide timer
+show_timer = true
+
+# Timer display mode: "clock" or "countdown"
+# - clock: Display reset time as local HH:MM clock (e.g., "⏱ 14:30")
+# - countdown: Display time remaining (e.g., "⌛️ 1:44")
+timer_mode = "clock"
+
+# Legacy option (deprecated, use show_timer + timer_mode instead):
+# show_countdown = true  # Equivalent to: show_timer = true, timer_mode = "countdown"
+
+[[segments]]
+# Weekly Token Usage Segment
+# Shows your weekly token quota usage with percentage
+# Only available for new plan users; gracefully hidden for legacy plans
+id = "weekly_usage"
+
+# Enable or disable this segment
+enabled = true
+
+# Icon configuration
+[segments.icon]
+emoji = "🗓️"
+ascii = "*"
+
+# Segment-specific options (currently none for weekly_usage)
+[segments.options]
+
+[[segments]]
+# MCP Usage Segment
+# Shows your MCP (Model Context Protocol) tool usage quota
+id = "mcp_usage"
+
+# Enable or disable this segment
+enabled = true
+
+# Icon configuration
+[segments.icon]
+emoji = "🌐"
+ascii = "#"
+
+# Segment-specific options (currently none for mcp_usage)
+[segments.options]
+
+# =============================================================================
+# DYNAMIC COLORING
+# =============================================================================
+# Colors automatically change based on usage percentage:
+# - Green (0-50%): Normal usage - all good
+# - Yellow (51-80%): Warning zone - approaching limit
+# - Red (81-100%): Critical usage - near or at limit
+#
+# This behavior is automatic and cannot be customized.
+# The colors apply to both icon and text for consistency.
+
+# =============================================================================
+# API CONFIGURATION
+# =============================================================================
+# Controls how the plugin communicates with the GLM API
+
+[api]
+# Request timeout in milliseconds
+timeout_ms = 5000
+
+# Number of retry attempts for failed API requests
+retry_attempts = 2
+
+# =============================================================================
+# CACHE CONFIGURATION
+# =============================================================================
+# Reduces API calls by caching usage data
+
+[cache]
+# Enable or disable caching
+# true: Cache usage data for ttl_seconds
+# false: Fetch fresh data on every status line update
+enabled = true
+
+# Time-to-live for cached data in seconds
+# Default: 300 seconds (5 minutes)
+# Lower values = more real-time but more API calls
+# Higher values = fewer API calls but less real-time
+ttl_seconds = 300
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+# The plugin requires these environment variables to be set:
+#
+# ANTHROPIC_AUTH_TOKEN - Your API authentication token
+# ANTHROPIC_BASE_URL - API base URL (platform-specific)
+#
+# For ZHIPU AI (智谱):
+#   ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+#
+# For ZAI:
+#   ANTHROPIC_BASE_URL="https://api.z.ai/api/paas/v4/"
+#
+# Set these in your shell profile (~/.bashrc, ~/.zshrc, etc.):
+#   export ANTHROPIC_AUTH_TOKEN="your-token-here"
+#   export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+
+# =============================================================================
+# EXAMPLES
+# =============================================================================
+#
+# Minimal configuration (use defaults):
+#   [style]
+#   mode = "auto"
+#
+#   [[segments]]
+#   id = "token_usage"
+#   enabled = true
+#
+#   [[segments]]
+#   id = "mcp_usage"
+#   enabled = true
+#
+# Disable MCP usage segment:
+#   [[segments]]
+#   id = "token_usage"
+#   enabled = true
+#
+#   [[segments]]
+#   id = "mcp_usage"
+#   enabled = false
+#
+# Force ASCII mode with longer cache:
+#   [style]
+#   mode = "ascii"
+#
+#   [cache]
+#   enabled = true
+#   ttl_seconds = 600
+#
+# Hide countdown timer:
+#   [[segments]]
+#   id = "token_usage"
+#   enabled = true
+#
+#   [segments.options]
+#   show_countdown = false
+
+# =============================================================================
+# TROUBLESHOOTING
+# =============================================================================
+#
+# Plugin not showing up:
+#   1. Run: glm-plan-usage check
+#   2. Verify environment variables are set
+#   3. Check config file syntax with: glm-plan-usage print
+#
+# Colors not changing:
+#   - Colors are automatic based on usage percentage
+#   - Green = 0-50%, Yellow = 51-80%, Red = 81-100%
+#
+# Icons showing as boxes or question marks:
+#   - Set mode = "ascii" to use ASCII characters instead
+#   - Or set mode = "emoji" if your terminal supports emojis
+#
+# Timer showing "--:--":
+#   - API did not provide nextResetTime
+#   - This is normal for some platforms or quota types
+#
+# Timer icons explained:
+#   - ⌛️ or !: Countdown mode (time remaining)
+#   - ⏱ or @: Clock mode (reset time as HH:MM)

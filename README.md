@@ -4,12 +4,15 @@
 
 一个用于 Claude Code 的插件，在状态栏显示 GLM（智谱/ZAI）算力套餐的使用量统计。
 
+> ⚠️ **征集测试**: 如果您有**周限额**的 API Key，欢迎联系我们进行测试，帮助完善周限额显示功能。
+
 ![demo](screenshots/demo.png)
 
 ## 功能特性
 
 - 📊 **实时使用量追踪**: 显示 Token 和 MCP 使用百分比
-- 🎨 **颜色警告提示**: 绿色 (0-79%)、黄色 (80-94%)、红色 (95-100%)
+- 🗓️ **周限额支持**: 显示每周 Token 使用量（仅限新版套餐）
+- 🎨 **颜色警告提示**: 绿色 (0-50%)、黄色 (51-80%)、红色 (81-100%)
 - ⚡ **智能缓存**: 5 分钟缓存减少 API 调用
 - 🔍 **自动平台检测**: 支持 ZAI 和智谱平台
 - 🌍 **跨平台支持**: 支持 Windows、macOS 和 Linux
@@ -102,7 +105,7 @@ cargo build --release
 cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 ```
 
-## 配置
+## Claude Code 配置
 
 在 Claude Code 的 `settings.json` 中添加：
 
@@ -124,21 +127,24 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 {
   "statusLine": {
     "type": "command",
-    "command": "%USERPROFILE%\\.claude\\glm-plan-usage\\glm-plan-usage.exe",
+    "command": "$HOME/.claude/glm-plan-usage/glm-plan-usage.exe",
     "padding": 0
   }
 }
 ```
 
+> **注意:** 老版本的 Claude Code 可能需要使用 Windows 风格路径，如 `%USERPROFILE%\.claude\glm-plan-usage\glm-plan-usage.exe`。
+
 重启 Claude Code，状态栏将显示：
 
 ```text
-🪙 32% (⌛️ 1:44) · 🌐 20/100
-   │  │           │     └─ MCP 使用量（已用/总计）
-   │  │           └─ 分隔符
-   │  └─ Token 倒计时（小时:分钟）
+🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │  │    │        │       │     └─ MCP 使用量（已用/总计）
+   │  │    │        │       └─ Segment 分隔符
+   │  │    │        └─ 周限额使用百分比（新版套餐）
+   │  │    └─ Token 重置时间（时钟模式）
+   │  └─ 内部分隔符
    └─ Token 使用百分比
-
 ```
 
 如果已在使用 [CCometixLine](https://github.com/Haleclipse/CCometixLine) 或其它类似插件，可创建脚本组合使用：
@@ -196,7 +202,7 @@ fi
 
 **Windows (PowerShell):**
 
-`%USERPROFILE%\.claude\status-line-combined.ps1` 脚本示例：
+`$HOME/.claude/status-line-combined.ps1` 脚本示例：
 
 ```powershell
 # 从 stdin 读取 JSON 输入
@@ -237,11 +243,13 @@ PowerShell 中赋予脚本执行权限：`Set-ExecutionPolicy -Scope CurrentUser
 {
   "statusLine": {
     "type": "command",
-    "command": "powershell.exe -File %USERPROFILE%\\.claude\\status-line-combined.ps1",
+    "command": "powershell.exe -File $HOME/.claude/status-line-combined.ps1",
     "padding": 0
   }
 }
 ```
+
+> **注意:** 老版本的 Claude Code 可能需要使用 Windows 风格路径。
 
 ## 环境变量
 
@@ -267,6 +275,34 @@ set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 $env:ANTHROPIC_AUTH_TOKEN="your-token-here"
 $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
+
+## 使用
+
+### 配置管理
+
+插件提供以下命令管理配置：
+
+```bash
+glm-plan-usage init       # 初始化配置文件 (~/.claude/glm-plan-usage/config.toml)
+glm-plan-usage print      # 打印当前配置内容
+glm-plan-usage check      # 验证配置文件是否有效
+```
+
+全局选项：
+- `--verbose`: 显示详细输出（调试用）
+- `--no-cache`: 禁用缓存（本次运行）
+
+### 自定义显示
+
+配置文件支持自定义 Segment 显示：
+
+- **显示模式**: 可选择 `auto`（自动检测）、`emoji` 或 `ascii` 三种模式
+- **自定义图标**: 可为 `emoji` 和 `ascii` 模式分别设置图标
+- **自定义分隔符**: 修改 `style.separator` 改变 Segment 间的分隔符
+- **定时器模式**: 设置 `timer_mode` 为 `clock`（时钟）或 `countdown`（倒计时）
+- **启用/禁用**: 通过 `enabled` 字段控制各 Segment 的显示
+
+配置文件位于 `~/.claude/glm-plan-usage/config.toml`，运行 `glm-plan-usage init` 生成默认配置，内含详细注释说明。
 
 ## 许可证
 

@@ -21,3 +21,4 @@ lib/
 # NPM publish (generated during release)
 npm-publish/
 .env
+.fa/

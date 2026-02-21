@@ -1,5 +1,5 @@
 mod segments;
 mod statusline;
 
-pub use segments::glm_usage::GlmUsageSegment;
+pub use segments::{McpUsageSegment, Segment, SegmentData, TokenUsageSegment, WeeklyUsageSegment};
 pub use statusline::StatusLineGenerator;

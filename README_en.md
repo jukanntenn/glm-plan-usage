@@ -4,12 +4,15 @@
 
 A Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage statistics in the status bar.
 
+> ⚠️ **Call for Testing**: If you have an API Key with **weekly quota limits**, please contact us to help test and refine the weekly quota display feature.
+
 ![demo](screenshots/demo.png)
 
 ## Features
 
 - 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
-- 🎨 **Color-coded Warnings**: Green (0-79%), Yellow (80-94%), Red (95-100%)
+- 🗓️ **Weekly Quota Support**: Display weekly Token usage (new plan users only)
+- 🎨 **Color-coded Warnings**: Green (0-50%), Yellow (51-80%), Red (81-100%)
 - ⚡ **Smart Caching**: 5-minute cache to reduce API calls
 - 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
 - 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
@@ -124,21 +127,24 @@ Add to your Claude Code `settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "%USERPROFILE%\\.claude\\glm-plan-usage\\glm-plan-usage.exe",
+    "command": "$HOME/.claude/glm-plan-usage/glm-plan-usage.exe",
     "padding": 0
   }
 }
 ```
 
+> **Note:** Older versions of Claude Code may require Windows-style paths, such as `%USERPROFILE%\.claude\glm-plan-usage\glm-plan-usage.exe`.
+
 Restart Claude Code, the status bar will display:
 
 ```text
-🪙 32% (⌛️ 1:44) · 🌐 20/100
-   │  │           │     └─ MCP usage (used/total)
-   │  │           └─ Separator
-   │  └─ Token countdown (hours:minutes)
+🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │  │    │        │       │     └─ MCP usage (used/total)
+   │  │    │        │       └─ Segment separator
+   │  │    │        └─ Weekly quota percentage (new plan users)
+   │  │    └─ Token reset time (clock mode)
+   │  └─ Internal separator
    └─ Token usage percentage
-
 ```
 
 If you are already using [CCometixLine](https://github.com/Haleclipse/CCometixLine) or other similar plugins, you can create scripts to combine them:
@@ -196,7 +202,7 @@ Configure in Claude Code `settings.json`:
 
 **Windows (PowerShell):**
 
-`%USERPROFILE%\.claude\status-line-combined.ps1` script example:
+`$HOME/.claude/status-line-combined.ps1` script example:
 
 ```powershell
 # Read JSON input from stdin
@@ -237,11 +243,13 @@ Configure in Claude Code `settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "powershell.exe -File %USERPROFILE%\\.claude\\status-line-combined.ps1",
+    "command": "powershell.exe -File $HOME/.claude/status-line-combined.ps1",
     "padding": 0
   }
 }
 ```
+
+> **Note:** Older versions of Claude Code may require Windows-style paths.
 
 ## Environment Variables
 
@@ -267,6 +275,34 @@ set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 $env:ANTHROPIC_AUTH_TOKEN="your-token-here"
 $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
+
+## Usage
+
+### Configuration Management
+
+The plugin provides the following commands to manage configuration:
+
+```bash
+glm-plan-usage init       # Initialize config file (~/.claude/glm-plan-usage/config.toml)
+glm-plan-usage print      # Print current configuration
+glm-plan-usage check      # Validate configuration file
+```
+
+Global options:
+- `--verbose`: Show verbose output (for debugging)
+- `--no-cache`: Disable cache for this run
+
+### Customize Display
+
+The configuration file supports customizing segment display:
+
+- **Display mode**: Choose from `auto` (auto-detect), `emoji`, or `ascii` modes
+- **Custom icons**: Set icons for `emoji` and `ascii` modes separately
+- **Custom separator**: Modify `style.separator` to change segment separator
+- **Timer mode**: Set `timer_mode` to `clock` or `countdown`
+- **Enable/Disable**: Use `enabled` field to control each segment's visibility
+
+Config file is located at `~/.claude/glm-plan-usage/config.toml`. Run `glm-plan-usage init` to generate default config with detailed comments.
 
 ## License
 

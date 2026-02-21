@@ -15,6 +15,7 @@ ureq = { version = "2.10", features = ["json"] }
 anyhow = "1.0"
 thiserror = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
+time = { version = "0.3", default-features = false, features = ["local-offset", "formatting"] }
 
 [profile.release]
 opt-level = 3

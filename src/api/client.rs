@@ -90,17 +90,31 @@ impl GlmApiClient {
             return Err(ApiError::ApiResponse(quota_response.msg).into());
         }
 
-        // Extract token usage (TOKENS_LIMIT)
+        // Extract 5h rolling token usage (TOKENS_LIMIT, unit=3)
         let token_usage = quota_response
             .data
             .limits
             .iter()
-            .find(|item| item.quota_type == "TOKENS_LIMIT")
+            .find(|item| item.quota_type == "TOKENS_LIMIT" && item.unit == 3)
             .map(|item| QuotaUsage {
                 used: item.current_value,
                 limit: item.usage,
                 percentage: item.percentage.clamp(0, 100) as u8,
                 time_window: "5h".to_string(),
+                reset_at: item.next_reset_time.map(|ms| ms / 1000),
+            });
+
+        // Extract weekly token quota (TOKENS_LIMIT, unit=6) - may not exist for legacy plans
+        let weekly_usage = quota_response
+            .data
+            .limits
+            .iter()
+            .find(|item| item.quota_type == "TOKENS_LIMIT" && item.unit == 6)
+            .map(|item| QuotaUsage {
+                used: item.current_value,
+                limit: item.usage,
+                percentage: item.percentage.clamp(0, 100) as u8,
+                time_window: "weekly".to_string(),
                 reset_at: item.next_reset_time.map(|ms| ms / 1000),
             });
 
@@ -120,6 +134,7 @@ impl GlmApiClient {
 
         Ok(UsageStats {
             token_usage,
+            weekly_usage,
             mcp_usage,
         })
     }
