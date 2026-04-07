@@ -1,0 +1,19 @@
+{
+  "projectType": "brownfield-fork",
+  "mode": "manual",
+  "researchDepth": "light",
+  "forkPositioning": "internal-customization",
+  "upstreamStrategy": "stay-compatible-when-possible",
+  "primaryGoal": "support-z-ai",
+  "priorities": [
+    "platform-support",
+    "compatibility",
+    "targeted-testing",
+    "docs-alignment"
+  ],
+  "notes": {
+    "forkOf": "glm-plan-usage",
+    "status": "initialized via gsd-new-project workflow",
+    "focus": "Implement support for the overseas Zhipu platform z.ai with minimal unnecessary fork drift"
+  }
+}
