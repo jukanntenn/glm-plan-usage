@@ -77,7 +77,7 @@ impl GlmApiClient {
 
     fn try_fetch_usage_stats(&self) -> Result<UsageStats> {
         // Fetch quota limits (contains all the data we need)
-        let url = format!("{}/monitor/usage/quota/limit", self.base_url);
+        let url = build_quota_url(&self.base_url);
 
         let response = self
             .authenticated_request(&url)
