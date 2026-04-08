@@ -13,6 +13,8 @@
 - ⚡ **智能缓存**: 5 分钟缓存减少 API 调用
 - 🔍 **自动平台检测**: 经过验证支持 **智谱 CN** 和海外 **z.ai** 双平台
 - 🌍 **跨平台支持**: 支持 Windows、macOS 和 Linux
+- 🛠️ **交互式设置**: `--setup` 命令引导配置平台和 Token
+- 🔧 **GSD 集成**: `--fix-gsd` 自动修复 GSD statusline 集成
 
 > 验证说明：本项目对 z.ai 平台的支持已通过代码分析、单元测试和公开文档验证。详细验证结论请参考 [z.ai 平台验证报告](.planning/phases/01-verify-and-implement-z-ai-support/01-z-ai-verification.md)。
 
@@ -143,7 +145,61 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 
 ```
 
-如果已在使用 [CCometixLine](https://github.com/Haleclipse/CCometixLine) 或其它类似插件，可创建脚本组合使用：
+### GSD statusline 集成
+
+如果你使用 GSD (Get Shit Done) 框架，`glm-plan-usage` 可以自动集成到 GSD statusline 中：
+
+```bash
+# 运行一次，自动修复集成
+glm-plan-usage --fix-gsd
+```
+
+**自动修复内容**：
+- 检测 `~/.claude/hooks/gsd-statusline.js` 是否存在
+- 添加 GLM usage 调用代码
+- 加载 `.env` 文件中的环境变量
+- 统一分隔符为 `│`（全角管道符）
+
+**手动集成**（如自动修复失败）：
+
+编辑 `~/.claude/hooks/gsd-statusline.js`，在 `// Output` 之前添加：
+
+```javascript
+// GLM Plan Usage integration
+let glmUsage = '';
+try {
+  const { spawnSync } = require('child_process');
+  const glmPath = path.join(homeDir, '.claude', 'glm-plan-usage', 'glm-plan-usage');
+  const envPath = path.join(homeDir, '.claude', 'glm-plan-usage', '.env');
+
+  if (fs.existsSync(glmPath) && fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    const glmEnv = { ...process.env };
+    envContent.split('\n').forEach(line => {
+      const eqIdx = line.indexOf('=');
+      if (eqIdx > 0) {
+        const key = line.substring(0, eqIdx).trim();
+        const value = line.substring(eqIdx + 1).trim();
+        if (key && value) glmEnv[key] = value;
+      }
+    });
+
+    const glmResult = spawnSync(glmPath, [], {
+      input: JSON.stringify(data),
+      encoding: 'utf8',
+      timeout: 4000,
+      env: glmEnv
+    });
+    if (glmResult.stdout && glmResult.stdout.trim()) {
+      glmUsage = ' │ ' + glmResult.stdout.trim();
+    }
+  }
+} catch (e) {
+  // Silent fail
+}
+
+// 然后在输出中使用 glmUsage 变量
+```
 
 **Linux/macOS:**
 
@@ -245,7 +301,51 @@ PowerShell 中赋予脚本执行权限：`Set-ExecutionPolicy -Scope CurrentUser
 }
 ```
 
+## 命令行选项
+
+```bash
+glm-plan-usage --help
+```
+
+| 选项 | 说明 |
+|------|------|
+| `--init` | 初始化配置文件 `~/.claude/glm-plan-usage/config.toml` |
+| `--setup` | 交互式设置向导，配置平台和 API Token |
+| `--fix-gsd` | 自动修复 GSD statusline 集成（检测并修复分隔符、.env 加载） |
+| `--verbose` | 详细输出模式 |
+| `--no-cache` | 禁用缓存 |
+
+### 使用示例
+
+**快速测试**（已有环境变量）：
+```bash
+echo '{"model":{"id":"test"}}' | glm-plan-usage
+```
+
+**交互式设置**（推荐首次使用）：
+```bash
+glm-plan-usage --setup
+```
+
+**修复 GSD 集成**（使用 GSD 时运行一次）：
+```bash
+glm-plan-usage --fix-gsd
+```
+
 ## 环境变量
+
+### 方式一：使用 .env 文件（推荐）
+
+运行 `glm-plan-usage --setup` 后会自动创建 `.env` 文件，程序会自动加载。
+
+**.env 文件位置**: `~/.claude/glm-plan-usage/.env`
+
+```bash
+ANTHROPIC_AUTH_TOKEN=your-token-here
+ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
+```
+
+### 方式二：手动设置环境变量
 
 **注意**：这些变量通常已在 Claude Code 的 `settings.json` 中配置。如果没有，可以手动设置。插件会自动从 `ANTHROPIC_BASE_URL` 检测平台，不支持的主机会直接报错，不会自动猜测。
 
