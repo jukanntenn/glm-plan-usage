@@ -63,9 +63,9 @@ impl GlmUsageSegment {
         }
 
         // Fetch from API
-        match GlmApiClient::from_env() {
+        match GlmApiClient::from_env(config) {
             Ok(client) => {
-                match client.fetch_usage_stats() {
+                match client.fetch_usage_stats(config) {
                     Ok(stats) => {
                         // Update cache
                         if config.cache.enabled {

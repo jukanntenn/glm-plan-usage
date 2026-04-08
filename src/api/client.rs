@@ -29,8 +29,8 @@ fn build_quota_url(normalized_base: &str) -> String {
 }
 
 impl GlmApiClient {
-    /// Create client from environment variables
-    pub fn from_env() -> Result<Self> {
+    /// Create client from environment variables with config
+    pub fn from_env(config: &crate::config::Config) -> Result<Self> {
         let token = std::env::var("ANTHROPIC_AUTH_TOKEN")
             .map_err(|_| ApiError::MissingEnvVar("ANTHROPIC_AUTH_TOKEN".to_string()))?;
 
@@ -44,7 +44,7 @@ impl GlmApiClient {
         let base_url = normalize_base_url(&base_url, platform);
 
         let agent = ureq::AgentBuilder::new()
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_millis(config.api.timeout_ms))
             .build();
 
         Ok(Self {
@@ -56,16 +56,16 @@ impl GlmApiClient {
     }
 
     /// Fetch complete usage statistics (simplified - all data from quota/limit endpoint)
-    pub fn fetch_usage_stats(&self) -> Result<UsageStats> {
+    pub fn fetch_usage_stats(&self, config: &crate::config::Config) -> Result<UsageStats> {
         // Retry logic
         let mut last_error = None;
 
-        for attempt in 0..=2 {
+        for attempt in 0..config.api.retry_attempts {
             match self.try_fetch_usage_stats() {
                 Ok(stats) => return Ok(stats),
                 Err(e) => {
                     last_error = Some(e);
-                    if attempt < 2 {
+                    if attempt < config.api.retry_attempts - 1 {
                         std::thread::sleep(Duration::from_millis(100));
                     }
                 }
