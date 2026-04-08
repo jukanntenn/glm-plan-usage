@@ -123,3 +123,59 @@ impl fmt::Display for QuotaUsage {
         write!(f, "{}%", self.percentage)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_from_url_zai_anthropic_path() {
+        // Test 1: z.ai with /api/anthropic suffix should detect as Zai
+        assert_eq!(
+            Platform::detect_from_url("https://api.z.ai/api/anthropic"),
+            Some(Platform::Zai)
+        );
+    }
+
+    #[test]
+    fn test_detect_from_url_zai_root() {
+        // Test z.ai without suffix should still detect as Zai
+        assert_eq!(
+            Platform::detect_from_url("https://api.z.ai"),
+            Some(Platform::Zai)
+        );
+    }
+
+    #[test]
+    fn test_detect_from_url_zhipu_cn_standard() {
+        // Test 2: Standard CN input should detect as Zhipu
+        assert_eq!(
+            Platform::detect_from_url("https://open.bigmodel.cn/api/anthropic"),
+            Some(Platform::Zhipu)
+        );
+    }
+
+    #[test]
+    fn test_detect_from_url_zhipu_cn_alternative() {
+        // Test alternative CN domain patterns
+        assert_eq!(
+            Platform::detect_from_url("https://api.zhipu.com"),
+            Some(Platform::Zhipu)
+        );
+    }
+
+    #[test]
+    fn test_detect_from_url_unknown_host() {
+        // Test 3: Unknown hosts return None (fail closed)
+        assert_eq!(
+            Platform::detect_from_url("https://api.openai.com/v1"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_detect_from_url_empty() {
+        // Edge case: empty string
+        assert_eq!(Platform::detect_from_url(""), None);
+    }
+}
