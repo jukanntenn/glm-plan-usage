@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: Milestone complete
-last_updated: "2026-04-08T01:37:46.712Z"
+milestone_name: GLM Plan Usage with reliable z.ai support
+status: v1.0 milestone complete
+last_updated: "2026-04-08T10:07:00Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -14,29 +14,30 @@ progress:
 
 # State
 
+## Project Reference
+
+See: .planning/PROJECT.md (updated 2026-04-08)
+
 ## Project
 
 - Name: glm-plan-usage fork
 - Type: brownfield fork / internal customization
-- Current primary goal: verified support for overseas Zhipu platform `z.ai`
+- **Core value:** Reliable token usage tracking for GLM models on both Zhipu platforms (bigmodel.cn and z.ai)
 - Upstream strategy: keep compatibility where practical
 
-## Existing artifacts
+## Completed Milestone
 
-- Codebase map exists under `.planning/codebase/`
-- Lightweight research added under `.planning/research/z-ai-support.md`
-- Requirements and roadmap initialized
+**v1.0 shipped 2026-04-08:**
+- 2 phases, 5 plans all complete
+- Verified z.ai platform detection and quota endpoint resolution
+- Fixed existing config/runtime drift for timeout_ms and retry_attempts
+- Bilingual documentation updated for both platforms
+- All 11 requirements satisfied
 
 ## Current focus
 
-Phase 1 planning should center on verified `z.ai` support with tests before broader cleanup or refactoring.
-
-## Risks to keep visible
-
-- Behavioral coverage is sparse
-- `z.ai` support is claimed in docs but may be only partially verified
-- Config/runtime drift already exists and should not be worsened
+Planning next milestone / waiting for new requirements.
 
 ## Next step
 
-Run `/gsd-plan-phase 1`
+Run `/gsd-new-milestone` to start next milestone
