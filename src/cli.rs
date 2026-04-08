@@ -9,6 +9,14 @@ pub struct Args {
     #[arg(long)]
     pub init: bool,
 
+    /// Interactive setup wizard to configure platform
+    #[arg(long)]
+    pub setup: bool,
+
+    /// Auto-fix GSD statusline integration
+    #[arg(long)]
+    pub fix_gsd: bool,
+
     /// Verbose output
     #[arg(long)]
     pub verbose: bool,

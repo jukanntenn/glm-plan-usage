@@ -13,7 +13,7 @@ pub struct GlmApiClient {
 
 /// Normalize base URL and resolve quota endpoint for a given platform.
 /// Exported for testing; internal use only.
-fn normalize_base_url(base_url: &str, platform: Platform) -> String {
+fn normalize_base_url(base_url: &str, _platform: Platform) -> String {
     // Both platforms: remove any path after /api segment
     // Examples:
     //   https://open.bigmodel.cn/api/anthropic → https://open.bigmodel.cn/api

@@ -45,6 +45,8 @@ pub struct Config {
     pub api: ApiConfig,
     #[serde(default)]
     pub cache: CacheConfig,
+    #[serde(default)]
+    pub platform: PlatformConfig,
 }
 
 impl Default for Config {
@@ -54,6 +56,7 @@ impl Default for Config {
             segments: vec![SegmentConfig::default_glm_usage()],
             api: ApiConfig::default(),
             cache: CacheConfig::default(),
+            platform: PlatformConfig::default(),
         }
     }
 }
@@ -170,4 +173,19 @@ fn default_cache_enabled() -> bool {
 
 fn default_ttl() -> u64 {
     300
+}
+
+/// Platform configuration
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PlatformConfig {
+    #[serde(default)]
+    pub base_url: String,
+}
+
+impl Default for PlatformConfig {
+    fn default() -> Self {
+        Self {
+            base_url: "https://open.bigmodel.cn/api/anthropic".to_string(),
+        }
+    }
 }
