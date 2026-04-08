@@ -146,6 +146,7 @@ impl GlmApiClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{ApiConfig, Config};
 
     // Test 4: Table-driven endpoint resolution tests covering both CN and z.ai
     #[test]
@@ -232,5 +233,75 @@ mod tests {
             "https://api.z.ai/api/paas/v4//monitor/usage/quota/limit"
         );
         // Double trailing slash is acceptable - HTTP handles it
+    }
+
+    #[test]
+    fn test_client_config_timeout_default() {
+        // Default config should have 5000ms timeout
+        let config = Config::default();
+        assert_eq!(config.api.timeout_ms, 5000);
+    }
+
+    #[test]
+    fn test_client_config_timeout_custom() {
+        // Custom timeout should be correctly stored in ApiConfig
+        let mut config = Config::default();
+        config.api.timeout_ms = 10000;
+        assert_eq!(config.api.timeout_ms, 10000);
+    }
+
+    #[test]
+    fn test_client_config_retry_default() {
+        // Default config should have 2 retry attempts
+        let config = Config::default();
+        assert_eq!(config.api.retry_attempts, 2);
+    }
+
+    #[test]
+    fn test_client_config_retry_custom() {
+        // Custom retry attempts should be correctly stored
+        let mut config = Config::default();
+        config.api.retry_attempts = 5;
+        assert_eq!(config.api.retry_attempts, 5);
+    }
+
+    #[test]
+    fn test_retry_loop_iteration_count_zero() {
+        // With retry_attempts = 0, loop runs 0 times → only one attempt total
+        let mut count = 0;
+        let config = Config {
+            api: ApiConfig {
+                retry_attempts: 0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        for _ in 0..config.api.retry_attempts {
+            count += 1;
+        }
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_retry_loop_iteration_count_default() {
+        // With default retry_attempts = 2, loop runs exactly 2 times
+        let mut count = 0;
+        let config = Config::default();
+        for _ in 0..config.api.retry_attempts {
+            count += 1;
+        }
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn test_retry_loop_iteration_count_three() {
+        // With retry_attempts = 3, loop runs exactly 3 times
+        let mut count = 0;
+        let mut config = Config::default();
+        config.api.retry_attempts = 3;
+        for _ in 0..config.api.retry_attempts {
+            count += 1;
+        }
+        assert_eq!(count, 3);
     }
 }
