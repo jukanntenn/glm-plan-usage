@@ -60,9 +60,15 @@ pub struct QuotaLimitItem {
     #[serde(rename = "type")]
     pub quota_type: String,
     #[serde(default)]
+    pub unit: i32,
+    #[serde(default)]
+    pub number: i64,
+    #[serde(default)]
     pub usage: i64,
     #[serde(rename = "currentValue", default)]
     pub current_value: i64,
+    #[serde(default)]
+    pub remaining: i64,
     pub percentage: i32,
     #[serde(rename = "nextResetTime", default)]
     pub next_reset_time: Option<i64>, // Millisecond timestamp

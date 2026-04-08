@@ -14,18 +14,39 @@ pub struct GlmApiClient {
 /// Normalize base URL and resolve quota endpoint for a given platform.
 /// Exported for testing; internal use only.
 fn normalize_base_url(base_url: &str, platform: Platform) -> String {
-    match platform {
-        Platform::Zhipu => base_url
-            .replace("/api/anthropic", "/api")
-            .replace("/anthropic", ""),
-        Platform::Zai => base_url.to_string(),
+    // Both platforms: remove any path after /api segment
+    // Examples:
+    //   https://open.bigmodel.cn/api/anthropic → https://open.bigmodel.cn/api
+    //   https://api.z.ai/api/anthropic → https://api.z.ai/api
+    //   https://api.z.ai/api/paas/v4/ → https://api.z.ai/api
+
+    // Remove trailing slash first
+    let base_url = base_url.trim_end_matches('/');
+
+    // Look for pattern "/api/" followed by more path
+    // The base_url format is: scheme://host/api/...
+    // So we look for "/api/" that comes after the host part
+    if let Some(api_idx) = base_url.find("/api/") {
+        let before_api = &base_url[..api_idx];
+        // Make sure we're past the scheme://host part (contains ://)
+        if before_api.contains("://") {
+            return format!("{}/api", before_api);
+        }
     }
+
+    // No /api/... path found, return as-is
+    base_url.to_string()
 }
 
 /// Build the full quota URL from normalized base URL.
 /// Exported for testing; internal use only.
 fn build_quota_url(normalized_base: &str) -> String {
-    format!("{}/monitor/usage/quota/limit", normalized_base)
+    // Avoid double slashes if base already ends with /
+    if normalized_base.ends_with('/') {
+        format!("{}monitor/usage/quota/limit", normalized_base)
+    } else {
+        format!("{}/monitor/usage/quota/limit", normalized_base)
+    }
 }
 
 impl GlmApiClient {
@@ -180,28 +201,30 @@ mod tests {
 
     #[test]
     fn test_quota_endpoint_resolution_zhipu_cn_trailing_slash() {
-        // CN input with trailing slash → still works
+        // CN input with trailing slash → normalizes correctly
         let input = "https://open.bigmodel.cn/api/anthropic/";
         let platform = Platform::Zhipu;
         let normalized = normalize_base_url(input, platform);
         let quota_url = build_quota_url(&normalized);
 
-        // Note: double slash is okay - URL parser will handle it
-        assert!(quota_url.contains("open.bigmodel.cn/api/monitor"));
+        assert_eq!(
+            quota_url,
+            "https://open.bigmodel.cn/api/monitor/usage/quota/limit"
+        );
     }
 
     #[test]
     fn test_quota_endpoint_resolution_zai_standard() {
-        // Test 1: Standard z.ai input: https://api.z.ai/api/anthropic
+        // Standard z.ai input: https://api.z.ai/api/anthropic
         let input = "https://api.z.ai/api/anthropic";
         let platform = Platform::Zai;
         let normalized = normalize_base_url(input, platform);
         let quota_url = build_quota_url(&normalized);
 
-        // Expected: no normalization → keep as-is then append monitor path
+        // Expected: removes /anthropic suffix → https://api.z.ai/api + /monitor/...
         assert_eq!(
             quota_url,
-            "https://api.z.ai/api/anthropic/monitor/usage/quota/limit"
+            "https://api.z.ai/api/monitor/usage/quota/limit"
         );
     }
 
@@ -227,12 +250,11 @@ mod tests {
         let normalized = normalize_base_url(input, platform);
         let quota_url = build_quota_url(&normalized);
 
-        // Expected: no normalization for z.ai, keep all path segments
+        // Expected: normalizes to https://api.z.ai/api + /monitor/...
         assert_eq!(
             quota_url,
-            "https://api.z.ai/api/paas/v4//monitor/usage/quota/limit"
+            "https://api.z.ai/api/monitor/usage/quota/limit"
         );
-        // Double trailing slash is acceptable - HTTP handles it
     }
 
     #[test]

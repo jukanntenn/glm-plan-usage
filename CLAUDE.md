@@ -178,6 +178,15 @@ fn default_my_setting() -> bool {
 }
 ```
 
+### Current API Configuration Options
+
+The `api` section in configuration supports these options (fully implemented and used at runtime):
+
+- `timeout_ms`: API request timeout in milliseconds, **default: 5000** (5 seconds)
+- `retry_attempts`: Number of retry attempts on failure before giving up, **default: 2**
+
+These correspond directly to the fields in `ApiConfig` in `src/config/types.rs` and are actually used by `GlmApiClient` when making HTTP requests (configuration/runtime drift has been fixed).
+
 ### Error Handling Philosophy
 
 **Graceful Degradation**: The plugin should never cause Claude Code to fail.

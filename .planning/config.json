@@ -15,5 +15,8 @@
     "forkOf": "glm-plan-usage",
     "status": "initialized via gsd-new-project workflow",
     "focus": "Implement support for the overseas Zhipu platform z.ai with minimal unnecessary fork drift"
+  },
+  "workflow": {
+    "_auto_chain_active": false
   }
 }

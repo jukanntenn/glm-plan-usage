@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Format token count with appropriate units (M/K/raw)
+#[allow(dead_code)]
 fn format_tokens(count: i64) -> String {
     if count < 0 {
         return "N/A".to_string();
@@ -53,7 +54,7 @@ impl GlmUsageSegment {
     }
 
     fn get_usage_stats(&self, config: &Config) -> Option<UsageStats> {
-        // Check cache first
+        // Check cache first (fresh entry)
         if config.cache.enabled {
             if let Some(entry) = self.cache.lock().unwrap().as_ref() {
                 if entry.timestamp.elapsed() < Duration::from_secs(config.cache.ttl_seconds) {
@@ -78,12 +79,23 @@ impl GlmUsageSegment {
                         Some(stats)
                     }
                     Err(_) => {
-                        // Return cached data if available
-                        self.cache.lock().unwrap().as_ref().map(|e| e.stats.clone())
+                        // API failed - return any cached data (even stale) as fallback
+                        if config.cache.enabled {
+                            self.cache.lock().unwrap().as_ref().map(|e| e.stats.clone())
+                        } else {
+                            None
+                        }
                     }
                 }
             }
-            Err(_) => None,
+            Err(_) => {
+                // API client creation failed - return any cached data (even stale) as fallback
+                if config.cache.enabled {
+                    self.cache.lock().unwrap().as_ref().map(|e| e.stats.clone())
+                } else {
+                    None
+                }
+            }
         }
     }
 
@@ -294,9 +306,14 @@ mod tests {
         };
         *segment.cache.lock().unwrap() = Some(entry);
 
-        // Should attempt to fetch new data, will fail without env vars → return None
+        // Should attempt to fetch new data, will fail without env vars
+        // But should return stale cache as fallback
         let result = segment.get_usage_stats(&config);
-        assert!(result.is_none());
+        assert!(result.is_some());
+        assert_eq!(
+            result.unwrap().token_usage.unwrap().used,
+            stats.token_usage.unwrap().used
+        );
     }
 
     #[test]
