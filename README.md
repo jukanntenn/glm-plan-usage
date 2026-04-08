@@ -11,8 +11,10 @@
 - 📊 **实时使用量追踪**: 显示 Token 和 MCP 使用百分比
 - 🎨 **颜色警告提示**: 绿色 (0-79%)、黄色 (80-94%)、红色 (95-100%)
 - ⚡ **智能缓存**: 5 分钟缓存减少 API 调用
-- 🔍 **自动平台检测**: 支持 ZAI 和智谱平台
+- 🔍 **自动平台检测**: 经过验证支持 **智谱 CN** 和海外 **z.ai** 双平台
 - 🌍 **跨平台支持**: 支持 Windows、macOS 和 Linux
+
+> 验证说明：本项目对 z.ai 平台的支持已通过代码分析、单元测试和公开文档验证。详细验证结论请参考 [z.ai 平台验证报告](.planning/phases/01-verify-and-implement-z-ai-support/01-z-ai-verification.md)。
 
 ## 安装
 
@@ -245,7 +247,9 @@ PowerShell 中赋予脚本执行权限：`Set-ExecutionPolicy -Scope CurrentUser
 
 ## 环境变量
 
-**注意**：这些变量通常已在 Claude Code 的 `settings.json` 中配置。如果没有，可以手动设置：
+**注意**：这些变量通常已在 Claude Code 的 `settings.json` 中配置。如果没有，可以手动设置。插件会自动从 `ANTHROPIC_BASE_URL` 检测平台，不支持的主机会直接报错，不会自动猜测。
+
+### 智谱 CN (ZHIPU)
 
 **Linux/macOS:**
 
@@ -267,6 +271,71 @@ set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 $env:ANTHROPIC_AUTH_TOKEN="your-token-here"
 $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
+
+### 海外 z.ai (ZAI)
+
+根据官方文档，海外用户请使用 `https://api.z.ai/api/anthropic` 作为基础 URL：
+
+**Linux/macOS:**
+
+```bash
+export ANTHROPIC_AUTH_TOKEN="your-token-here"
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+**Windows (Command Prompt):**
+
+```cmd
+set ANTHROPIC_AUTH_TOKEN=your-token-here
+set ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:ANTHROPIC_AUTH_TOKEN="your-token-here"
+$env:ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+验证说明：`Platform::detect_from_url` 会自动检测：
+- 包含 `api.z.ai` → `Platform::Zai`
+- 包含 `bigmodel.cn` 或 `zhipu` → `Platform::Zhipu`
+
+## 常见问题排查
+
+### 平台检测失败
+
+如果遇到 "Platform detection failed" 错误，请检查 `ANTHROPIC_BASE_URL` 配置：
+
+```bash
+# Linux/macOS: 检查当前配置
+echo $ANTHROPIC_BASE_URL
+
+# 智谱 CN 用户应使用：
+export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+
+# 海外 z.ai 用户应使用：
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+插件不会对未知主机自动猜测，必须匹配上述两种模式之一。
+
+### API 请求失败
+
+验证配置后可以手动测试 API 连通性（**注意：不要在输出中暴露真实 Token**）：
+
+```bash
+# Linux/macOS: 使用 curl 测试（不打印敏感信息）
+curl -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN" \
+  "$ANTHROPIC_BASE_URL/monitor/usage/quota/limit" \
+  -o /dev/null -w "%{http_code}\n"
+```
+
+应该返回 `200` 状态码。如果返回 401 或 403，请检查 Token 是否正确。
+
+### 额外说明
+
+本项目对 z.ai 平台的支持基于公开文档和代码测试验证。由于没有可用的 live token，无法进行端到端集成验证。[验证报告](.planning/phases/01-verify-and-implement-z-ai-support/01-z-ai-verification.md)中记录了期望的响应格式和更多技术细节。
 
 ## 许可证
 

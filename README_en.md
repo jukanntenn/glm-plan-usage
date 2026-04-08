@@ -11,8 +11,10 @@ A Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage statistics 
 - 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
 - 🎨 **Color-coded Warnings**: Green (0-79%), Yellow (80-94%), Red (95-100%)
 - ⚡ **Smart Caching**: 5-minute cache to reduce API calls
-- 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
+- 🔍 **Auto Platform Detection**: Verified support for both **ZHIPU CN** and overseas **z.ai** platforms
 - 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
+
+> Verification: Support for the z.ai platform has been verified through code analysis, unit testing, and public documentation. For detailed verification conclusions, see [z.ai Platform Verification Report](.planning/phases/01-verify-and-implement-z-ai-support/01-z-ai-verification.md).
 
 ## Installation
 
@@ -245,7 +247,9 @@ Configure in Claude Code `settings.json`:
 
 ## Environment Variables
 
-**Note:** These variables are typically already configured in your Claude Code `settings.json`. If not, you can set them manually:
+**Note:** These variables are typically already configured in your Claude Code `settings.json`. If not, you can set them manually. The plugin automatically detects the platform from `ANTHROPIC_BASE_URL`; unsupported hosts will fail immediately rather than guessing.
+
+### ZHIPU CN
 
 **Linux/macOS:**
 
@@ -267,6 +271,71 @@ set ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic
 $env:ANTHROPIC_AUTH_TOKEN="your-token-here"
 $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 ```
+
+### Overseas z.ai (ZAI)
+
+According to official documentation, overseas users should use `https://api.z.ai/api/anthropic` as the base URL:
+
+**Linux/macOS:**
+
+```bash
+export ANTHROPIC_AUTH_TOKEN="your-token-here"
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+**Windows (Command Prompt):**
+
+```cmd
+set ANTHROPIC_AUTH_TOKEN=your-token-here
+set ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:ANTHROPIC_AUTH_TOKEN="your-token-here"
+$env:ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+Detection logic: `Platform::detect_from_url` automatically detects:
+- Contains `api.z.ai` → `Platform::Zai`
+- Contains `bigmodel.cn` or `zhipu` → `Platform::Zhipu`
+
+## Troubleshooting
+
+### Platform Detection Failed
+
+If you encounter the "Platform detection failed" error, check your `ANTHROPIC_BASE_URL` configuration:
+
+```bash
+# Linux/macOS: check current configuration
+echo $ANTHROPIC_BASE_URL
+
+# For ZHIPU CN users:
+export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+
+# For overseas z.ai users:
+export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+```
+
+The plugin does not guess for unknown hosts; it must match one of the two patterns above.
+
+### API Request Failed
+
+After verifying your configuration, you can manually test API connectivity (**note: do not expose your real token in output**):
+
+```bash
+# Linux/macOS: test with curl (doesn't print sensitive information)
+curl -H "Authorization: Bearer $ANTHROPIC_AUTH_TOKEN" \
+  "$ANTHROPIC_BASE_URL/monitor/usage/quota/limit" \
+  -o /dev/null -w "%{http_code}\n"
+```
+
+A `200` status code indicates success. If you get 401 or 403, check your token.
+
+### Additional Notes
+
+Support for the z.ai platform in this project has been verified based on public documentation and code testing. End-to-end integration verification couldn't be performed without a live token. The [verification report](.planning/phases/01-verify-and-implement-z-ai-support/01-z-ai-verification.md) documents the expected response format and more technical details.
 
 ## License
 
