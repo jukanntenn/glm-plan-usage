@@ -6,8 +6,8 @@
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Add routing/regression tests and minimal z.ai normalization in the existing client flow
-- [ ] 01-02-PLAN.md — Align bilingual docs with verified CN and z.ai behavior
+- [x] 01-01-PLAN.md — Add routing/regression tests and minimal z.ai normalization in the existing client flow
+- [x] 01-02-PLAN.md — Align bilingual docs with verified CN and z.ai behavior
 
 ### Tasks
 1. Inspect current `Platform` detection and API base URL handling.
@@ -23,6 +23,12 @@ Plans:
 
 ## Phase 2 — Close confidence gaps around runtime behavior
 **Goal:** Reduce regression risk in the plugin's highest-value logic.
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Add comprehensive inline test coverage for formatting and cache behavior in glm_usage.rs
+- [ ] 02-02-PLAN.md — Align GlmApiClient with config: use timeout_ms and retry_attempts from ApiConfig
+- [ ] 02-03-PLAN.md — Targeted documentation update in CLAUDE.md for config/runtime alignment
 
 ### Tasks
 1. Add tests for countdown/formatting helpers and cache fallback behavior.
@@ -46,4 +52,4 @@ Plans:
 - Fork remains reasonably upstream-compatible.
 
 ## Recommended next command
-Run `/gsd-execute-phase 1` to create the executable implementation plan for verified `z.ai` support.
+Run `/gsd-execute-phase 2` to create the executable implementation.
