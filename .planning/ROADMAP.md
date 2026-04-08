@@ -26,9 +26,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Add comprehensive inline test coverage for formatting and cache behavior in glm_usage.rs
-- [ ] 02-02-PLAN.md — Align GlmApiClient with config: use timeout_ms and retry_attempts from ApiConfig
-- [ ] 02-03-PLAN.md — Targeted documentation update in CLAUDE.md for config/runtime alignment
+- [x] 02-01-PLAN.md — Add comprehensive inline test coverage for formatting and cache behavior in glm_usage.rs
+- [x] 02-02-PLAN.md — Align GlmApiClient with config: use timeout_ms and retry_attempts from ApiConfig
+- [x] 02-03-PLAN.md — Targeted documentation update in CLAUDE.md for config/runtime alignment
 
 ### Tasks
 1. Add tests for countdown/formatting helpers and cache fallback behavior.
