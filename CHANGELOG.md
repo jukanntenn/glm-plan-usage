@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0] - 2026-04-30
+
+### Added
+
+- Weekly quota tracking for new plan users
+- Display mode improvements for status bar segments
+
 ## [0.0.3] - 2025-02-14
 
 ### Added
