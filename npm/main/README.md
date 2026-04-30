@@ -16,10 +16,12 @@ npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.
 
 ## Features
 
-- 📊 **Monitor**: Display GLM (ZHIPU/ZAI) coding plan usage statistics
-- 🌍 **Cross-platform**: Works on Windows, macOS, and Linux
-- 📦 **Easy installation**: One command via npm
-- 🎨 **Beautiful**: Color-coded warning levels based on usage percentage
+- 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
+- 🗓️ **Weekly Quota Support**: Display weekly Token usage (new plan users only)
+- 🎨 **Color-coded Warnings**: Green (0-50%), Yellow (51-80%), Red (81-100%)
+- ⚡ **Smart Caching**: 5-minute cache to reduce API calls
+- 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
+- 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
 
 ## Usage
 
@@ -43,10 +45,24 @@ Add to your Claude Code `settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "%USERPROFILE%\\.claude\\glm-plan-usage\\glm-plan-usage.exe",
+    "command": "$HOME/.claude/glm-plan-usage/glm-plan-usage.exe",
     "padding": 0
   }
 }
+```
+
+> **Note:** Older versions of Claude Code may require Windows-style paths, such as `%USERPROFILE%\.claude\glm-plan-usage\glm-plan-usage.exe`.
+
+Restart Claude Code, the status bar will display:
+
+```text
+🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │  │    │        │       │     └─ MCP usage (used/total)
+   │  │    │        │       └─ Segment separator
+   │  │    │        └─ Weekly quota percentage (new plan users)
+   │  │    └─ Token reset time (clock mode)
+   │  └─ Internal separator
+   └─ Token usage percentage
 ```
 
 ## Environment Variables

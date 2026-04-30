@@ -118,9 +118,17 @@ jobs:
       with:
         path: artifacts
 
+    - name: Extract release notes from CHANGELOG
+      id: changelog
+      run: |
+        version=${GITHUB_REF#refs/tags/v}
+        awk "/\\[${version}\\]/{flag=1; next} /^## \\[/{flag=0} flag" CHANGELOG.md > release_notes.md
+        echo "path=release_notes.md" >> "$GITHUB_OUTPUT"
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
+        body_path: ${{ steps.changelog.outputs.path }}
         files: artifacts/*/*
         draft: false
         prerelease: false
