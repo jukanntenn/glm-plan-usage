@@ -106,3 +106,13 @@ Only returned for new plan users. Absent for legacy plans (code handles as `None
 - `nextResetTime` is a **millisecond** timestamp — divide by 1000 for seconds
 - Countdown format: `⌛️ HH:MM` (e.g., "⌛️ 1:44" = 1 hour 44 minutes)
 - Edge cases: Expired → `⌛️ 0:00`, Missing → `⌛️ --:--`
+
+## Client-Side Multiplier
+
+The consumption multiplier (e.g., `3x`) is **not** an API field — it is calculated client-side in `TokenUsageSegment` based on:
+
+1. **Model matching**: Check if `InputData.model.id` contains any of `multiplier.premium_models` substrings (case-insensitive)
+2. **Peak detection**: Compare current UTC+8 time against `peak_start`/`peak_end` (closed interval)
+3. **Promo check**: If current date ≤ `multiplier.promo.expires`, use `promo.off_peak` instead of `off_peak`
+
+Result: `peak` rate during peak hours, `off_peak` (or `promo.off_peak`) otherwise. Non-premium models always return `1.0` (hidden).

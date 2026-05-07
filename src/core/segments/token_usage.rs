@@ -2,7 +2,12 @@ use super::{Segment, SegmentData};
 use crate::api::{GlmApiClient, SharedCache, UsageStats};
 use crate::config::{Config, DisplayMode, InputData};
 use std::time::{SystemTime, UNIX_EPOCH};
-use time::{format_description, OffsetDateTime};
+use time::{format_description, Month, OffsetDateTime, UtcOffset};
+
+const UTC_PLUS_8: UtcOffset = match UtcOffset::from_hms(8, 0, 0) {
+    Ok(offset) => offset,
+    Err(_) => unreachable!(),
+};
 
 /// Timer display mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,7 +20,7 @@ impl TimerMode {
     fn from_str(s: &str) -> Self {
         match s {
             "countdown" => TimerMode::Countdown,
-            _ => TimerMode::Clock, // default to clock
+            _ => TimerMode::Clock,
         }
     }
 }
@@ -59,10 +64,9 @@ impl TokenUsageSegment {
             Err(_) => return "--:--".to_string(),
         };
 
-        // Try to get local offset, fallback to UTC
-        let local_datetime = match time::UtcOffset::local_offset_at(utc_datetime) {
+        let local_datetime = match UtcOffset::local_offset_at(utc_datetime) {
             Ok(offset) => utc_datetime.to_offset(offset),
-            Err(_) => utc_datetime, // fallback to UTC
+            Err(_) => utc_datetime,
         };
 
         let format = format_description::parse("[hour]:[minute]").unwrap();
@@ -87,6 +91,79 @@ impl TokenUsageSegment {
             },
         }
     }
+
+    fn parse_hhmm(s: &str) -> Option<u16> {
+        let (h, m) = s.split_once(':')?;
+        let hours: u16 = h.parse().ok()?;
+        let minutes: u16 = m.parse().ok()?;
+        Some(hours * 60 + minutes)
+    }
+
+    fn is_peak_time(peak_start: &str, peak_end: &str) -> Option<bool> {
+        let now_utc8 = OffsetDateTime::now_utc().to_offset(UTC_PLUS_8);
+        let current = (now_utc8.hour() as u16) * 60 + now_utc8.minute() as u16;
+        let start = Self::parse_hhmm(peak_start)?;
+        let end = Self::parse_hhmm(peak_end)?;
+        Some(current >= start && current <= end)
+    }
+
+    fn is_promo_active(expires: &str) -> Option<bool> {
+        let now_utc8 = OffsetDateTime::now_utc().to_offset(UTC_PLUS_8);
+        let (ey, em, ed) = Self::parse_ymd(expires)?;
+        let expires_date = time::Date::from_calendar_date(ey, em, ed).ok()?;
+        Some(now_utc8.date() <= expires_date)
+    }
+
+    fn parse_ymd(s: &str) -> Option<(i32, Month, u8)> {
+        let mut parts = s.split('-');
+        let y: i32 = parts.next()?.parse().ok()?;
+        let m: u8 = parts.next()?.parse().ok()?;
+        let d: u8 = parts.next()?.parse().ok()?;
+        let month = Month::try_from(m).ok()?;
+        Some((y, month, d))
+    }
+
+    fn calculate_multiplier(input: &InputData, config: &Config) -> f64 {
+        let model_id = match input.model.as_ref() {
+            Some(m) => &m.id,
+            None => return 1.0,
+        };
+
+        let mc = &config.multiplier;
+        let model_lower = model_id.to_lowercase();
+        let is_premium = mc
+            .premium_models
+            .iter()
+            .any(|pm| model_lower.contains(&pm.to_lowercase()));
+
+        if !is_premium {
+            return 1.0;
+        }
+
+        let is_peak = match Self::is_peak_time(&mc.peak_start, &mc.peak_end) {
+            Some(v) => v,
+            None => return 1.0,
+        };
+
+        if is_peak {
+            return mc.peak;
+        }
+
+        let promo_active = Self::is_promo_active(&mc.promo.expires).unwrap_or(false);
+        if promo_active {
+            mc.promo.off_peak
+        } else {
+            mc.off_peak
+        }
+    }
+
+    fn format_multiplier(value: f64) -> String {
+        if value == value.floor() {
+            format!("{}x", value as i64)
+        } else {
+            format!("{}x", value)
+        }
+    }
 }
 
 impl Default for TokenUsageSegment {
@@ -100,7 +177,7 @@ impl Segment for TokenUsageSegment {
         "token_usage"
     }
 
-    fn collect(&self, _input: &InputData, config: &Config) -> Option<SegmentData> {
+    fn collect(&self, input: &InputData, config: &Config) -> Option<SegmentData> {
         let stats = if config.cache.enabled {
             self.cache
                 .get_or_fetch(config.cache.ttl_seconds, || self.fetch_usage_stats())
@@ -112,31 +189,25 @@ impl Segment for TokenUsageSegment {
 
         let primary = format!("{}%", token.percentage);
 
-        // Get resolved display mode for icon selection
         let resolved_mode = config.style.resolved_mode();
 
-        // Read timer options with backward compatibility
         let segment_config = config.segments.iter().find(|s| s.id == "token_usage");
 
-        // Check show_timer first, fall back to show_countdown for backward compat
         let show_timer = segment_config
             .and_then(|s| s.options.get("show_timer"))
             .and_then(|v| v.as_bool())
             .or_else(|| {
-                // Fallback to show_countdown for backward compatibility
                 segment_config
                     .and_then(|s| s.options.get("show_countdown"))
                     .and_then(|v| v.as_bool())
             })
             .unwrap_or(true);
 
-        // Read timer_mode, default to "clock"
         let timer_mode_str = segment_config
             .and_then(|s| s.options.get("timer_mode"))
             .and_then(|v| v.as_str())
             .unwrap_or("clock");
 
-        // Determine timer_mode, with backward compat for show_countdown
         let timer_mode = if segment_config
             .and_then(|s| s.options.get("show_timer"))
             .is_none()
@@ -144,7 +215,6 @@ impl Segment for TokenUsageSegment {
                 .and_then(|s| s.options.get("show_countdown"))
                 .is_some()
         {
-            // Old config using show_countdown: preserve countdown behavior
             TimerMode::Countdown
         } else {
             TimerMode::from_str(timer_mode_str)
@@ -169,9 +239,25 @@ impl Segment for TokenUsageSegment {
             String::new()
         };
 
-        let out = SegmentData::new(primary)
+        let show_multiplier = segment_config
+            .and_then(|s| s.options.get("show_multiplier"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
+
+        let multiplier_value = Self::calculate_multiplier(input, config);
+        let multiplier_str = if show_multiplier && multiplier_value > 1.0 {
+            Some(Self::format_multiplier(multiplier_value))
+        } else {
+            None
+        };
+
+        let mut out = SegmentData::new(primary)
             .with_secondary(secondary)
             .with_metadata("percentage", token.percentage.to_string());
+
+        if let Some(m) = multiplier_str {
+            out = out.with_multiplier(m);
+        }
 
         Some(out)
     }

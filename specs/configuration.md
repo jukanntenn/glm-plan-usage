@@ -57,6 +57,17 @@ ascii = "#"
 timeout_ms = 5000           # Request timeout (currently not wired to client)
 retry_attempts = 2          # Retry count (currently not wired to client)
 
+[multiplier]
+premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
+peak_start = "14:00"        # Peak hours start (UTC+8)
+peak_end = "18:00"          # Peak hours end (UTC+8)
+peak = 3.0                  # Peak hours consumption rate
+off_peak = 2.0              # Off-peak hours consumption rate
+
+[multiplier.promo]
+off_peak = 1.0              # Promotional off-peak rate
+expires = "2026-06-30"      # Promo expiry date (inclusive)
+
 [cache]
 enabled = true
 ttl_seconds = 300
@@ -66,11 +77,12 @@ ttl_seconds = 300
 
 ## Extension Pattern
 
-All config changes require updating **three locations**:
+All config changes require updating **four locations**:
 
 1. **`src/config/types.rs`** — Add struct field with `#[serde(default)]`
 2. **`impl Default for Config`** — Provide default value
 3. **`src/config_template.toml`** — Add option to embedded template with docs
+4. **`src/core/segments/mod.rs`** — If SegmentData structure changes (e.g., new fields)
 
 **Why `#[serde(default)]`**: Allows adding new fields without breaking existing user configs.
 
@@ -80,7 +92,7 @@ All config changes require updating **three locations**:
 
 | ID             | Description                           | Output (Emoji)     | Output (ASCII)   | Options                                        |
 | -------------- | ------------------------------------- | ------------------ | ---------------- | ---------------------------------------------- |
-| `token_usage`  | Token usage percentage with timer     | `🪙 32% · ⏱ 14:30` | `$ 32% · @ 14:30` | `show_timer`, `timer_mode` (default: clock)    |
+| `token_usage`  | Token usage percentage with timer     | `🪙 32% · 3x · ⏱ 14:30` | `$ 32% · 3x · @ 14:30` | `show_timer`, `timer_mode` (default: clock), `show_multiplier` (default: true) |
 | `weekly_usage` | Weekly token quota percentage         | `🗓️ 24%`          | `* 24%`          | None                                           |
 | `mcp_usage`    | MCP server usage count                | `🌐 20/100`        | `# 20/100`       | None                                           |
 
@@ -102,7 +114,16 @@ Auto mode detects terminal capabilities: checks for Windows Terminal, VS Code te
 
 ## Dynamic Coloring
 
-Colors automatically change based on usage percentage:
+Colors are applied per segment part:
+
+| Part                    | Color Rule                                  | ANSI Code |
+| ----------------------- | ------------------------------------------- | --------- |
+| Icon + Primary (%)      | Dynamic based on usage percentage           | see below |
+| Internal separator (·)  | White                                       | 37        |
+| Secondary (timer/clock) | Gray                                        | 109       |
+| Multiplier (e.g., 3x)   | Red                                         | 196       |
+
+Primary color changes based on usage percentage:
 
 | Range   | Color  | ANSI Code |
 | ------- | ------ | --------- |
@@ -118,7 +139,8 @@ Colors use ANSI 256-color codes for broad terminal compatibility. Not user-confi
 ## Output Format
 
 - Segments joined by `style.separator` (default: `|`)
-- Within each segment, primary and secondary text separated by `·`
+- Within each segment: primary [· multiplier] [· secondary]
+- Multiplier (e.g., `3x`) shown only when > 1x and `show_multiplier` is true
 - Timer format: `⏱ HH:MM` (clock mode) or `⌛️ H:MM` (countdown mode)
 
 ## Timer Modes
@@ -142,6 +164,13 @@ Timer icons are determined by `timer_mode` + resolved `DisplayMode`, not by segm
 | `style.separator`    | `" | "`                                      |
 | `api.timeout_ms`     | `5000`                                       |
 | `api.retry_attempts` | `2`                                          |
+| `multiplier.premium_models` | `["glm-5", "glm-5.1", "glm-5-turbo"]` |
+| `multiplier.peak_start`     | `"14:00"`                              |
+| `multiplier.peak_end`       | `"18:00"`                              |
+| `multiplier.peak`           | `3.0`                                  |
+| `multiplier.off_peak`       | `2.0`                                  |
+| `multiplier.promo.off_peak` | `1.0`                                  |
+| `multiplier.promo.expires`  | `"2026-06-30"`                         |
 | `cache.enabled`      | `true`                                       |
 | `cache.ttl_seconds`  | `300`                                        |
 | `segments`           | `token_usage`, `weekly_usage`, `mcp_usage`   |

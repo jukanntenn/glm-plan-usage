@@ -3,15 +3,17 @@ use crate::core::segments::SegmentData;
 
 pub struct StatusLineGenerator;
 
-/// Get ANSI 256 color code based on usage percentage
-/// - Green (0-50%): Normal usage
-/// - Yellow (51-80%): Warning zone
-/// - Red (81-100%): Critical usage
-fn get_color_for_percentage(percentage: u8) -> String {
+const WHITE: &str = "\x1b[37m";
+const GRAY: &str = "\x1b[38;5;109m";
+const RED: &str = "\x1b[38;5;196m";
+const RESET: &str = "\x1b[0m";
+const DOT_SEP: &str = " · ";
+
+fn get_color_for_percentage(percentage: u8) -> &'static str {
     match percentage {
-        0..=50 => "\x1b[38;5;46m".to_string(),   // Bright green
-        51..=80 => "\x1b[38;5;226m".to_string(), // Bright yellow
-        _ => "\x1b[38;5;196m".to_string(),       // Bright red
+        0..=50 => "\x1b[38;5;46m",
+        51..=80 => "\x1b[38;5;226m",
+        _ => "\x1b[38;5;196m",
     }
 }
 
@@ -36,40 +38,45 @@ impl StatusLineGenerator {
 
     fn render_segment(config: &Config, seg_config: &SegmentConfig, data: &SegmentData) -> String {
         let icon = Self::get_icon(config, seg_config);
+        let pct_color = data
+            .metadata
+            .get("percentage")
+            .and_then(|s| s.parse::<u8>().ok())
+            .map(get_color_for_percentage)
+            .unwrap_or(GRAY);
 
-        let text = if data.secondary.is_empty() {
-            data.primary.clone()
+        // Primary block: icon + primary text in percentage color
+        let primary_block = if icon.is_empty() {
+            format!("{}{}{}", pct_color, data.primary, RESET)
         } else {
-            format!("{} · {}", data.primary, data.secondary)
+            format!("{}{} {}{}", pct_color, icon, data.primary, RESET)
         };
 
-        // Apply dynamic color based on percentage
-        let colored_output = if let Some(percentage_str) = data.metadata.get("percentage") {
-            if let Ok(percentage) = percentage_str.parse::<u8>() {
-                let color_code = get_color_for_percentage(percentage);
-                if icon.is_empty() {
-                    format!("{}{}\x1b[0m", color_code, text)
-                } else {
-                    format!("{}{} {}\x1b[0m", color_code, icon, text)
-                }
-            } else {
-                // Failed to parse percentage, use gray
-                if icon.is_empty() {
-                    format!("\x1b[38;5;109m{}\x1b[0m", text)
-                } else {
-                    format!("\x1b[38;5;109m{} {}\x1b[0m", icon, text)
-                }
-            }
+        // Multiplier block (red, only when present)
+        let multiplier_block = data
+            .multiplier
+            .as_deref()
+            .filter(|m| !m.is_empty())
+            .map(|m| format!("{}{}{}", RED, m, RESET));
+
+        // Secondary block (gray)
+        let secondary_block = if data.secondary.is_empty() {
+            None
         } else {
-            // No percentage available, use gray
-            if icon.is_empty() {
-                format!("\x1b[38;5;109m{}\x1b[0m", text)
-            } else {
-                format!("\x1b[38;5;109m{} {}\x1b[0m", icon, text)
-            }
+            Some(format!("{}{}{}", GRAY, data.secondary, RESET))
         };
 
-        colored_output
+        // Assemble: primary [· multiplier] [· secondary]
+        let dot_sep = format!("{}{}{}", WHITE, DOT_SEP, RESET);
+        let mut parts = vec![primary_block];
+        if let Some(m) = multiplier_block {
+            parts.push(m);
+        }
+        if let Some(s) = secondary_block {
+            parts.push(s);
+        }
+
+        parts.join(&dot_sep)
     }
 
     fn get_icon(config: &Config, seg_config: &SegmentConfig) -> String {
@@ -81,7 +88,7 @@ impl StatusLineGenerator {
     }
 
     fn format_separator(config: &Config) -> String {
-        format!("\x1b[0m\x1b[37m{}\x1b[0m", config.style.separator)
+        format!("{}{}{}{}", RESET, WHITE, config.style.separator, RESET)
     }
 }
 

@@ -21,6 +21,7 @@ npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.
 - 🎨 **Color-coded Warnings**: Green (0-50%), Yellow (51-80%), Red (81-100%)
 - ⚡ **Smart Caching**: 5-minute cache to reduce API calls
 - 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
+- 🔄 **Model Consumption Multiplier**: Automatically calculates and displays consumption rate for premium models during peak/off-peak hours
 - 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
 
 ## Usage
@@ -56,12 +57,13 @@ Add to your Claude Code `settings.json`:
 Restart Claude Code, the status bar will display:
 
 ```text
-🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
-   │  │    │        │       │     └─ MCP usage (used/total)
-   │  │    │        │       └─ Segment separator
-   │  │    │        └─ Weekly quota percentage (new plan users)
-   │  │    └─ Token reset time (clock mode)
-   │  └─ Internal separator
+🪙 32% · 3x · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │   │  │    │            │   │    └─ MCP usage (used/total)
+   │   │  │    │            │   └─ Segment separator
+   │   │  │    │            └─ Weekly quota percentage (new plan users)
+   │   │  │    └─ Token reset time (clock mode)
+   │   │  └─ Consumption multiplier (only for premium models when > 1x)
+   │   └─ Internal separator
    └─ Token usage percentage
 ```
 

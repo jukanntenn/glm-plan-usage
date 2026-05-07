@@ -9,6 +9,7 @@ use std::collections::HashMap;
 pub struct SegmentData {
     pub primary: String,
     pub secondary: String,
+    pub multiplier: Option<String>,
     pub metadata: HashMap<String, String>,
 }
 
@@ -17,12 +18,18 @@ impl SegmentData {
         Self {
             primary: primary.into(),
             secondary: String::new(),
+            multiplier: None,
             metadata: HashMap::new(),
         }
     }
 
     pub fn with_secondary(mut self, secondary: impl Into<String>) -> Self {
         self.secondary = secondary.into();
+        self
+    }
+
+    pub fn with_multiplier(mut self, multiplier: impl Into<String>) -> Self {
+        self.multiplier = Some(multiplier.into());
         self
     }
 

@@ -55,6 +55,11 @@ timer_mode = "clock"
 # Legacy option (deprecated, use show_timer + timer_mode instead):
 # show_countdown = true  # Equivalent to: show_timer = true, timer_mode = "countdown"
 
+# Show model consumption multiplier for premium models
+# true: Display multiplier (e.g., "3x") when > 1x (default)
+# false: Never display multiplier
+show_multiplier = true
+
 [[segments]]
 # Weekly Token Usage Segment
 # Shows your weekly token quota usage with percentage
@@ -91,13 +96,16 @@ ascii = "#"
 # =============================================================================
 # DYNAMIC COLORING
 # =============================================================================
-# Colors automatically change based on usage percentage:
-# - Green (0-50%): Normal usage - all good
-# - Yellow (51-80%): Warning zone - approaching limit
-# - Red (81-100%): Critical usage - near or at limit
+# Colors are applied per segment part:
+# - Primary (percentage) + icon: dynamic based on usage
+#   - Green (0-50%): Normal usage
+#   - Yellow (51-80%): Warning zone
+#   - Red (81-100%): Critical usage
+# - Internal separator (·): white
+# - Secondary (timer/clock): gray
+# - Multiplier (e.g., 3x): red (only shown when > 1x)
 #
 # This behavior is automatic and cannot be customized.
-# The colors apply to both icon and text for consistency.
 
 # =============================================================================
 # API CONFIGURATION
@@ -110,6 +118,30 @@ timeout_ms = 5000
 
 # Number of retry attempts for failed API requests
 retry_attempts = 2
+
+# =============================================================================
+# MULTIPLIER CONFIGURATION
+# =============================================================================
+# Controls how model consumption rate is displayed for premium models
+# Premium models consume tokens at a higher rate during peak/off-peak hours
+
+[multiplier]
+# Model ID substrings that identify premium models (case-insensitive)
+premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
+
+# Peak hours in UTC+8 (closed interval: both endpoints inclusive)
+peak_start = "14:00"
+peak_end = "18:00"
+
+# Multiplier values
+peak = 3.0       # Peak hours consumption rate
+off_peak = 2.0   # Off-peak hours consumption rate
+
+[multiplier.promo]
+# Promotional off-peak rate (overrides off_peak when promo is active)
+off_peak = 1.0
+# Promo expiry date (inclusive). After this date, normal off_peak applies.
+expires = "2026-06-30"
 
 # =============================================================================
 # CACHE CONFIGURATION

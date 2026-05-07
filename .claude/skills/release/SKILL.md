@@ -39,7 +39,11 @@ Fail → report which check failed (test/fmt/clippy) + likely cause, STOP.
 3. Update exactly TWO files:
    - `Cargo.toml`: `version = "x.y.z"`
    - `npm/main/package.json`: `"version": "x.y.z"`
-4. Verify both show the same new version
+4. Sync `Cargo.lock` with the new version:
+   ```bash
+   cargo check
+   ```
+5. Verify all three files show the same new version (`Cargo.toml`, `npm/main/package.json`, `Cargo.lock`)
 
 Do NOT touch `npm/platforms/*/package.json` or `optionalDependencies` in npm/main/package.json — `prepare-packages.js` handles those at release time.
 
@@ -127,7 +131,7 @@ Must have: CHANGELOG extraction step + `body_path` in `action-gh-release`. If mi
 ### Step 7: Commit
 
 ```bash
-git add Cargo.toml npm/main/package.json CHANGELOG.md README.md README_en.md npm/main/README.md .github/workflows/release.yml
+git add Cargo.toml Cargo.lock npm/main/package.json CHANGELOG.md README.md README_en.md npm/main/README.md .github/workflows/release.yml
 git commit -m "chore: release vX.Y.Z"
 ```
 

@@ -15,6 +15,7 @@
 - 🎨 **颜色警告提示**: 绿色 (0-50%)、黄色 (51-80%)、红色 (81-100%)
 - ⚡ **智能缓存**: 5 分钟缓存减少 API 调用
 - 🔍 **自动平台检测**: 支持 ZAI 和智谱平台
+- 🔄 **模型消耗倍率**: 高峰/非高峰时段自动计算并显示 premium 模型的消耗倍率
 - 🌍 **跨平台支持**: 支持 Windows、macOS 和 Linux
 
 ## 安装
@@ -45,6 +46,7 @@ npm update -g @jukanntenn/glm-plan-usage
 #### Linux
 
 #### 选项 1: 动态链接版本（推荐）
+
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64.tar.gz
@@ -52,9 +54,11 @@ tar -xzf glm-plan-usage-linux-x64.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*系统要求: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)*
+
+_系统要求: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)_
 
 #### 选项 2: 静态链接版本（通用兼容）
+
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64-musl.tar.gz
@@ -62,7 +66,8 @@ tar -xzf glm-plan-usage-linux-x64-musl.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*适用于任何 Linux 发行版（静态链接，无依赖）*
+
+_适用于任何 Linux 发行版（静态链接，无依赖）_
 
 #### macOS (Intel)
 
@@ -138,12 +143,13 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 重启 Claude Code，状态栏将显示：
 
 ```text
-🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
-   │  │    │        │       │     └─ MCP 使用量（已用/总计）
-   │  │    │        │       └─ Segment 分隔符
-   │  │    │        └─ 周限额使用百分比（新版套餐）
-   │  │    └─ Token 重置时间（时钟模式）
-   │  └─ 内部分隔符
+🪙 32% · 3x · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │   │  │    │            │   │    └─ MCP 使用量（已用/总计）
+   │   │  │    │            │   └─ Segment 分隔符
+   │   │  │    │            └─ 周限额使用百分比（新版套餐）
+   │   │  │    └─ Token 重置时间（时钟模式）
+   │   │  └─ 消耗倍率（仅 premium 模型且 > 1x 时显示）
+   │   └─ 内部分隔符
    └─ Token 使用百分比
 ```
 
@@ -289,6 +295,7 @@ glm-plan-usage check      # 验证配置文件是否有效
 ```
 
 全局选项：
+
 - `--verbose`: 显示详细输出（调试用）
 - `--no-cache`: 禁用缓存（本次运行）
 
@@ -300,6 +307,8 @@ glm-plan-usage check      # 验证配置文件是否有效
 - **自定义图标**: 可为 `emoji` 和 `ascii` 模式分别设置图标
 - **自定义分隔符**: 修改 `style.separator` 改变 Segment 间的分隔符
 - **定时器模式**: 设置 `timer_mode` 为 `clock`（时钟）或 `countdown`（倒计时）
+- **消耗倍率显示**: 设置 `show_multiplier` 控制是否显示消耗倍率（默认 `true`）
+- **倍率配置**: 通过 `[multiplier]` 段自定义 premium 模型列表、高峰时段和倍率值
 - **启用/禁用**: 通过 `enabled` 字段控制各 Segment 的显示
 
 配置文件位于 `~/.claude/glm-plan-usage/config.toml`，运行 `glm-plan-usage init` 生成默认配置，内含详细注释说明。

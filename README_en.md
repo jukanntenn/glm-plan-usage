@@ -15,6 +15,7 @@ A Claude Code plugin that displays GLM (ZHIPU/ZAI) coding plan usage statistics 
 - 🎨 **Color-coded Warnings**: Green (0-50%), Yellow (51-80%), Red (81-100%)
 - ⚡ **Smart Caching**: 5-minute cache to reduce API calls
 - 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
+- 🔄 **Model Consumption Multiplier**: Automatically calculates and displays consumption rate for premium models during peak/off-peak hours
 - 🌍 **Cross-platform Support**: Works on Windows, macOS, and Linux
 
 ## Installation
@@ -45,6 +46,7 @@ Or download manually from [Releases](https://github.com/jukanntenn/glm-plan-usag
 #### Linux
 
 #### Option 1: Dynamically Linked (Recommended)
+
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64.tar.gz
@@ -52,9 +54,11 @@ tar -xzf glm-plan-usage-linux-x64.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*System requirements: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)*
+
+_System requirements: Ubuntu 22.04+, CentOS 9+, Debian 11+, RHEL 9+ (glibc 2.35+)_
 
 #### Option 2: Statically Linked (Universal Compatibility)
+
 ```bash
 mkdir -p ~/.claude/glm-plan-usage
 wget https://github.com/jukanntenn/glm-plan-usage/releases/latest/download/glm-plan-usage-linux-x64-musl.tar.gz
@@ -62,7 +66,8 @@ tar -xzf glm-plan-usage-linux-x64-musl.tar.gz
 cp glm-plan-usage ~/.claude/glm-plan-usage/
 chmod +x ~/.claude/glm-plan-usage/glm-plan-usage
 ```
-*Works on any Linux distribution (statically linked, no dependencies)*
+
+_Works on any Linux distribution (statically linked, no dependencies)_
 
 #### macOS (Intel)
 
@@ -138,12 +143,13 @@ Add to your Claude Code `settings.json`:
 Restart Claude Code, the status bar will display:
 
 ```text
-🪙 32% · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
-   │  │    │        │       │     └─ MCP usage (used/total)
-   │  │    │        │       └─ Segment separator
-   │  │    │        └─ Weekly quota percentage (new plan users)
-   │  │    └─ Token reset time (clock mode)
-   │  └─ Internal separator
+🪙 32% · 3x · ⏱ 14:30 | 🗓️ 24% | 🌐 20/100
+   │   │  │    │            │   │    └─ MCP usage (used/total)
+   │   │  │    │            │   └─ Segment separator
+   │   │  │    │            └─ Weekly quota percentage (new plan users)
+   │   │  │    └─ Token reset time (clock mode)
+   │   │  └─ Consumption multiplier (only for premium models when > 1x)
+   │   └─ Internal separator
    └─ Token usage percentage
 ```
 
@@ -289,6 +295,7 @@ glm-plan-usage check      # Validate configuration file
 ```
 
 Global options:
+
 - `--verbose`: Show verbose output (for debugging)
 - `--no-cache`: Disable cache for this run
 
@@ -300,6 +307,8 @@ The configuration file supports customizing segment display:
 - **Custom icons**: Set icons for `emoji` and `ascii` modes separately
 - **Custom separator**: Modify `style.separator` to change segment separator
 - **Timer mode**: Set `timer_mode` to `clock` or `countdown`
+- **Multiplier display**: Set `show_multiplier` to control whether consumption rate is shown (default: `true`)
+- **Multiplier config**: Customize premium model list, peak hours, and rate values via `[multiplier]` section
 - **Enable/Disable**: Use `enabled` field to control each segment's visibility
 
 Config file is located at `~/.claude/glm-plan-usage/config.toml`. Run `glm-plan-usage init` to generate default config with detailed comments.

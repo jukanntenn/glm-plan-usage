@@ -85,6 +85,8 @@ pub struct Config {
     pub api: ApiConfig,
     #[serde(default)]
     pub cache: CacheConfig,
+    #[serde(default)]
+    pub multiplier: MultiplierConfig,
 }
 
 impl Default for Config {
@@ -98,6 +100,7 @@ impl Default for Config {
             ],
             api: ApiConfig::default(),
             cache: CacheConfig::default(),
+            multiplier: MultiplierConfig::default(),
         }
     }
 }
@@ -249,4 +252,82 @@ fn default_cache_enabled() -> bool {
 
 fn default_ttl() -> u64 {
     300
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MultiplierConfig {
+    #[serde(default = "default_premium_models")]
+    pub premium_models: Vec<String>,
+    #[serde(default = "default_peak_start")]
+    pub peak_start: String,
+    #[serde(default = "default_peak_end")]
+    pub peak_end: String,
+    #[serde(default = "default_peak")]
+    pub peak: f64,
+    #[serde(default = "default_off_peak")]
+    pub off_peak: f64,
+    #[serde(default)]
+    pub promo: PromoConfig,
+}
+
+impl Default for MultiplierConfig {
+    fn default() -> Self {
+        Self {
+            premium_models: default_premium_models(),
+            peak_start: default_peak_start(),
+            peak_end: default_peak_end(),
+            peak: default_peak(),
+            off_peak: default_off_peak(),
+            promo: PromoConfig::default(),
+        }
+    }
+}
+
+fn default_premium_models() -> Vec<String> {
+    vec![
+        "glm-5".to_string(),
+        "glm-5.1".to_string(),
+        "glm-5-turbo".to_string(),
+    ]
+}
+
+fn default_peak_start() -> String {
+    "14:00".to_string()
+}
+
+fn default_peak_end() -> String {
+    "18:00".to_string()
+}
+
+fn default_peak() -> f64 {
+    3.0
+}
+
+fn default_off_peak() -> f64 {
+    2.0
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PromoConfig {
+    #[serde(default = "default_promo_off_peak")]
+    pub off_peak: f64,
+    #[serde(default = "default_promo_expires")]
+    pub expires: String,
+}
+
+impl Default for PromoConfig {
+    fn default() -> Self {
+        Self {
+            off_peak: default_promo_off_peak(),
+            expires: default_promo_expires(),
+        }
+    }
+}
+
+fn default_promo_off_peak() -> f64 {
+    1.0
+}
+
+fn default_promo_expires() -> String {
+    "2026-06-30".to_string()
 }
