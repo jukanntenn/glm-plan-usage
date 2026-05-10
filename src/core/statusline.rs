@@ -11,8 +11,8 @@ const DOT_SEP: &str = " · ";
 
 fn get_color_for_percentage(percentage: u8) -> &'static str {
     match percentage {
-        0..=50 => "\x1b[38;5;46m",
-        51..=80 => "\x1b[38;5;226m",
+        0..=80 => "\x1b[38;5;46m",
+        81..=90 => "\x1b[38;5;226m",
         _ => "\x1b[38;5;196m",
     }
 }
