@@ -1,7 +1,18 @@
+//! Entry point for the GLM Plan Usage plugin.
+//!
+//! This binary reads Claude Code's stdin to receive usage data,
+//! fetches GLM API statistics, and outputs a formatted status line.
+
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
 mod api;
 mod cli;
 mod config;
 mod core;
+mod util;
 
 use clap::Parser;
 use cli::Commands;
@@ -16,19 +27,12 @@ fn main() {
             Commands::Init => handle_init(),
             Commands::Print => handle_print(),
             Commands::Check => handle_check(),
+            Commands::Update => handle_update(),
         }
         return;
     }
 
-    let mut config = match Config::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            if args.verbose {
-                eprintln!("Warning: Failed to load config: {}. Using defaults.", e);
-            }
-            Config::default()
-        }
-    };
+    let mut config = Config::load();
 
     if args.no_cache {
         config.cache.enabled = false;
@@ -38,7 +42,7 @@ fn main() {
         Ok(text) => text,
         Err(e) => {
             if args.verbose {
-                eprintln!("Error reading stdin: {}", e);
+                eprintln!("Error reading stdin: {e}");
             }
             return;
         }
@@ -48,7 +52,7 @@ fn main() {
         Ok(data) => data,
         Err(e) => {
             if args.verbose {
-                eprintln!("Error parsing input JSON: {}", e);
+                eprintln!("Error parsing input JSON: {e}");
             }
             InputData {
                 model: None,
@@ -61,56 +65,68 @@ fn main() {
 
     let segments = collect_segments(&config, &input);
 
-    let output = StatusLineGenerator::generate(&config, segments);
+    let output = StatusLineGenerator::generate(&config, &segments);
 
     if !output.is_empty() {
-        print!("{}", output);
+        print!("{output}");
     }
 }
 
+/// Initialize a new config file at the default location.
 fn handle_init() {
     let config_path = Config::config_path();
     if config_path.exists() {
         println!("Config already exists at {}", config_path.display());
+        println!("Run `glm-plan-usage update` to migrate to latest format.");
         return;
     }
     match Config::init_config() {
         Ok(path) => println!("Created config at {}", path.display()),
         Err(e) => {
-            eprintln!("Error initializing config: {}", e);
+            eprintln!("Error initializing config: {e}");
             std::process::exit(1);
         }
     }
 }
 
+/// Print the current configuration to stdout.
 fn handle_print() {
-    let config = Config::load().unwrap_or_else(|_| Config::default());
+    let config = Config::load();
     if let Err(e) = config.print() {
-        eprintln!("Error printing config: {}", e);
+        eprintln!("Error printing config: {e}");
         std::process::exit(1);
     }
 }
 
+/// Validate the current configuration and report any errors.
 fn handle_check() {
     let config_path = Config::config_path();
     if !config_path.exists() {
         eprintln!("Config file not found at {}", config_path.display());
         std::process::exit(1);
     }
-    let config = match Config::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            eprintln!("Configuration invalid: {}", e);
-            std::process::exit(1);
-        }
-    };
+    let config = Config::load();
     if let Err(e) = config.check() {
-        eprintln!("Configuration invalid: {}", e);
+        eprintln!("Configuration invalid: {e}");
         std::process::exit(1);
     }
     println!("✓ Configuration valid");
 }
 
+/// Update the config file to the latest format version.
+fn handle_update() {
+    match Config::load_for_update() {
+        Ok((_, None)) => println!("Config created"),
+        Ok((_, Some(r))) if r.changes == 0 => println!("Already up to date"),
+        Ok((_, Some(r))) => println!("Config migrated ({} changes)", r.changes),
+        Err(e) => {
+            eprintln!("Error: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Read all input from stdin.
 fn read_stdin() -> Result<String, std::io::Error> {
     use std::io::Read;
     let mut buffer = String::new();
@@ -118,6 +134,7 @@ fn read_stdin() -> Result<String, std::io::Error> {
     Ok(buffer)
 }
 
+/// Collect active segments with their data for rendering.
 fn collect_segments(config: &Config, input: &InputData) -> Vec<(SegmentConfig, core::SegmentData)> {
     let mut results = Vec::new();
 
@@ -126,17 +143,21 @@ fn collect_segments(config: &Config, input: &InputData) -> Vec<(SegmentConfig, c
     let weekly_segment = WeeklyUsageSegment::with_cache(shared_cache.clone());
     let mcp_segment = McpUsageSegment::with_cache(shared_cache.clone());
 
+    let segment_lookup: [(&str, &dyn Segment); 3] = [
+        ("token_usage", &token_segment),
+        ("weekly_usage", &weekly_segment),
+        ("mcp_usage", &mcp_segment),
+    ];
+
     for seg_config in &config.segments {
         if !seg_config.enabled {
             continue;
         }
 
-        let data = match seg_config.id.as_str() {
-            "token_usage" => token_segment.collect(input, config),
-            "weekly_usage" => weekly_segment.collect(input, config),
-            "mcp_usage" => mcp_segment.collect(input, config),
-            _ => None,
-        };
+        let data = segment_lookup
+            .iter()
+            .find(|(id, _)| *id == seg_config.id.as_str())
+            .and_then(|(_, seg)| seg.collect(input, config));
 
         if let Some(d) = data {
             results.push((seg_config.clone(), d));

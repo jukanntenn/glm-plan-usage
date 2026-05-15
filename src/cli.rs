@@ -1,6 +1,11 @@
+//! CLI argument definitions using clap derive macros.
+
 use clap::{Parser, Subcommand};
 
-/// GLM plan usage plugin for Claude Code
+/// GLM plan usage plugin for Claude Code.
+///
+/// Displays GLM (ZHIPU/ZAI) coding plan usage statistics
+/// in the Claude Code status bar.
 #[derive(Parser, Debug)]
 #[command(name = "glm-plan-usage")]
 #[command(about = "Display GLM plan usage statistics in Claude Code status bar", long_about = None)]
@@ -19,12 +24,15 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// Initialize configuration file
+    /// Initialize the configuration file.
     Init,
 
-    /// Print current configuration
+    /// Print the current configuration.
     Print,
 
-    /// Validate configuration file
+    /// Validate the configuration file.
     Check,
+
+    /// Update or migrate the configuration file.
+    Update,
 }

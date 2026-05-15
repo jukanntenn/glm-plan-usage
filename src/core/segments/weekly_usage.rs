@@ -1,50 +1,23 @@
+//! Weekly usage segment for displaying weekly token consumption.
+//!
+//! This segment shows the percentage of tokens used within
+//! the current weekly billing period.
+
 use super::{Segment, SegmentData};
-use crate::api::{GlmApiClient, SharedCache, UsageStats};
+use crate::api::SharedCache;
 use crate::config::{Config, InputData};
 
-pub struct WeeklyUsageSegment {
-    cache: SharedCache,
-}
+super::segment_with_cache!(WeeklyUsageSegment);
 
-impl WeeklyUsageSegment {
-    pub fn new() -> Self {
-        Self {
-            cache: SharedCache::new(),
-        }
-    }
-
-    pub fn with_cache(cache: SharedCache) -> Self {
-        Self { cache }
-    }
-
-    fn fetch_usage_stats(&self) -> Option<UsageStats> {
-        GlmApiClient::from_env().ok()?.fetch_usage_stats().ok()
-    }
-}
-
-impl Default for WeeklyUsageSegment {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
+/// Collects weekly usage data for display in the status line.
 impl Segment for WeeklyUsageSegment {
-    fn id(&self) -> &str {
-        "weekly_usage"
-    }
-
     fn collect(&self, _input: &InputData, config: &Config) -> Option<SegmentData> {
-        let stats = if config.cache.enabled {
-            self.cache
-                .get_or_fetch(config.cache.ttl_seconds, || self.fetch_usage_stats())
-        } else {
-            self.fetch_usage_stats()
-        }?;
+        let stats = super::fetch_usage(config, &self.cache)?;
 
         let weekly = stats.weekly_usage.as_ref()?;
 
         let primary = format!("{}%", weekly.percentage);
 
-        Some(SegmentData::new(primary).with_metadata("percentage", weekly.percentage.to_string()))
+        Some(SegmentData::new(primary).with_metadata("percentage", weekly.percentage))
     }
 }

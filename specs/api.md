@@ -21,7 +21,7 @@ Host: open.bigmodel.cn
 Authorization: Bearer <ANTHROPIC_AUTH_TOKEN>
 ```
 
-Retry: 3 attempts with 100ms delay between each.
+Retry: `api.retry_attempts` attempts with 100ms delay between retries. The client timeout is configured from `api.timeout_ms`.
 
 ## Response Format
 

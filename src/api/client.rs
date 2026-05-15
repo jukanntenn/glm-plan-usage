@@ -1,72 +1,109 @@
-use super::types::*;
+//! API client for GLM usage data endpoints.
+//!
+//! This module provides the `GlmApiClient` for fetching usage statistics
+//! from the GLM/ZHIPU API.
+
+use super::types::{ApiError, Platform, QuotaLimitResponse, UsageStats};
 use anyhow::Result;
 use std::time::Duration;
 use ureq::{Agent, Request};
 
+const AUTH_TOKEN_ENV: &str = "ANTHROPIC_AUTH_TOKEN";
+const BASE_URL_ENV: &str = "ANTHROPIC_BASE_URL";
+const DEFAULT_BASE_URL: &str = "https://open.bigmodel.cn/api/anthropic";
+const QUOTA_LIMIT_ENDPOINT: &str = "/monitor/usage/quota/limit";
+
+/// Quota type for token-based limits.
+const TOKENS_LIMIT: &str = "TOKENS_LIMIT";
+
+/// Quota type for time-based limits (MCP tool usage).
+const TIME_LIMIT: &str = "TIME_LIMIT";
+
+/// Period unit value for the 5-hour billing window.
+///
+/// The API identifies the short-period token quota by unit=3.
+const PERIOD_UNIT_5H: i64 = 3;
+
+/// Period unit value for the weekly billing window.
+///
+/// The API identifies the weekly token quota by unit=6.
+const PERIOD_UNIT_WEEKLY: i64 = 6;
+
+/// Delay between retry attempts in milliseconds.
+///
+/// Short delay to allow transient network issues to resolve without
+/// overloading the API. Too short and we hammer the server; too long
+/// and we degrade user experience.
+const RETRY_DELAY_MS: u64 = 100;
+
 /// GLM API client
+#[derive(Debug)]
 pub struct GlmApiClient {
+    /// HTTP agent for making requests.
     agent: Agent,
+    /// Base URL for the API.
     base_url: String,
+    /// Authentication token.
     token: String,
-    _platform: Platform,
+    /// Number of retry attempts on failure.
+    retry_attempts: u32,
 }
 
 impl GlmApiClient {
-    /// Create client from environment variables
-    pub fn from_env() -> Result<Self> {
-        let token = std::env::var("ANTHROPIC_AUTH_TOKEN")
-            .map_err(|_| ApiError::MissingEnvVar("ANTHROPIC_AUTH_TOKEN".to_string()))?;
+    /// Create a new API client from environment variables.
+    ///
+    /// Reads `ANTHROPIC_AUTH_TOKEN` and `ANTHROPIC_BASE_URL` from the environment.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the auth token is missing or the platform cannot be detected.
+    pub fn from_env(timeout: Duration, retry_attempts: u32) -> Result<Self> {
+        let token = std::env::var(AUTH_TOKEN_ENV)
+            .map_err(|e| ApiError::MissingEnvVar(format!("{AUTH_TOKEN_ENV}: {e}")))?;
 
-        let base_url = std::env::var("ANTHROPIC_BASE_URL")
-            .unwrap_or_else(|_| "https://open.bigmodel.cn/api/anthropic".to_string());
+        let base_url = std::env::var(BASE_URL_ENV).unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
 
         let platform =
             Platform::detect_from_url(&base_url).ok_or(ApiError::PlatformDetectionFailed)?;
 
         // Fix base URL for ZHIPU platform (remove /anthropic suffix for monitor API)
         let base_url = if platform == Platform::Zhipu {
-            base_url
-                .replace("/api/anthropic", "/api")
-                .replace("/anthropic", "")
+            base_url.replace("/anthropic", "")
         } else {
             base_url
         };
 
-        let agent = ureq::AgentBuilder::new()
-            .timeout(Duration::from_secs(5))
-            .build();
+        let agent = ureq::AgentBuilder::new().timeout(timeout).build();
 
         Ok(Self {
             agent,
             base_url,
             token,
-            _platform: platform,
+            retry_attempts,
         })
     }
 
-    /// Fetch complete usage statistics (simplified - all data from quota/limit endpoint)
+    /// Fetch usage statistics from the GLM API.
+    ///
+    /// Retries up to `retry_attempts` times with 100ms delays between attempts.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if all API attempts fail due to HTTP errors, API errors, or parse failures.
     pub fn fetch_usage_stats(&self) -> Result<UsageStats> {
-        // Retry logic
-        let mut last_error = None;
-
-        for attempt in 0..=2 {
+        for _ in 0..self.retry_attempts {
             match self.try_fetch_usage_stats() {
                 Ok(stats) => return Ok(stats),
-                Err(e) => {
-                    last_error = Some(e);
-                    if attempt < 2 {
-                        std::thread::sleep(Duration::from_millis(100));
-                    }
-                }
+                Err(_) => std::thread::sleep(Duration::from_millis(RETRY_DELAY_MS)),
             }
         }
-
-        Err(last_error.unwrap())
+        self.try_fetch_usage_stats()
     }
 
+    /// Attempts to fetch usage stats from the API once.
     fn try_fetch_usage_stats(&self) -> Result<UsageStats> {
         // Fetch quota limits (contains all the data we need)
-        let url = format!("{}/monitor/usage/quota/limit", self.base_url);
+        let url = format!("{}{}", self.base_url, QUOTA_LIMIT_ENDPOINT);
 
         let response = self
             .authenticated_request(&url)
@@ -90,47 +127,14 @@ impl GlmApiClient {
             return Err(ApiError::ApiResponse(quota_response.msg).into());
         }
 
-        // Extract 5h rolling token usage (TOKENS_LIMIT, unit=3)
         let token_usage = quota_response
             .data
-            .limits
-            .iter()
-            .find(|item| item.quota_type == "TOKENS_LIMIT" && item.unit == 3)
-            .map(|item| QuotaUsage {
-                used: item.current_value,
-                limit: item.usage,
-                percentage: item.percentage.clamp(0, 100) as u8,
-                time_window: "5h".to_string(),
-                reset_at: item.next_reset_time.map(|ms| ms / 1000),
-            });
-
-        // Extract weekly token quota (TOKENS_LIMIT, unit=6) - may not exist for legacy plans
-        let weekly_usage = quota_response
-            .data
-            .limits
-            .iter()
-            .find(|item| item.quota_type == "TOKENS_LIMIT" && item.unit == 6)
-            .map(|item| QuotaUsage {
-                used: item.current_value,
-                limit: item.usage,
-                percentage: item.percentage.clamp(0, 100) as u8,
-                time_window: "weekly".to_string(),
-                reset_at: item.next_reset_time.map(|ms| ms / 1000),
-            });
-
-        // Extract tool usage (TIME_LIMIT)
-        let mcp_usage = quota_response
-            .data
-            .limits
-            .iter()
-            .find(|item| item.quota_type == "TIME_LIMIT")
-            .map(|item| QuotaUsage {
-                used: item.current_value,
-                limit: item.usage,
-                percentage: item.percentage.clamp(0, 100) as u8,
-                time_window: "30d".to_string(),
-                reset_at: item.next_reset_time.map(|ms| ms / 1000),
-            });
+            .find_quota(TOKENS_LIMIT, Some(PERIOD_UNIT_5H), "5h");
+        let weekly_usage =
+            quota_response
+                .data
+                .find_quota(TOKENS_LIMIT, Some(PERIOD_UNIT_WEEKLY), "weekly");
+        let mcp_usage = quota_response.data.find_quota(TIME_LIMIT, None, "30d");
 
         Ok(UsageStats {
             token_usage,
@@ -139,6 +143,7 @@ impl GlmApiClient {
         })
     }
 
+    /// Creates an authenticated HTTP request with Bearer token and content type.
     fn authenticated_request(&self, url: &str) -> Request {
         self.agent
             .get(url)

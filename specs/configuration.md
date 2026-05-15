@@ -54,8 +54,8 @@ ascii = "#"
 [segments.options]
 
 [api]
-timeout_ms = 5000           # Request timeout (currently not wired to client)
-retry_attempts = 2          # Retry count (currently not wired to client)
+timeout_ms = 5000           # Request timeout in milliseconds
+retry_attempts = 2          # Retry count
 
 [multiplier]
 premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
