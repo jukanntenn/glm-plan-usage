@@ -78,9 +78,9 @@
 # =============================================================================
 # Colors are applied per segment part:
 # - Primary (percentage) + icon: dynamic based on usage
-#   - Green (0-50%): Normal usage
-#   - Yellow (51-80%): Warning zone
-#   - Red (81-100%): Critical usage
+#   - Green (0-80%): Normal usage
+#   - Yellow (81-90%): Warning zone
+#   - Red (91-100%): Critical usage
 # - Internal separator (·): white
 # - Secondary (timer/clock): gray
 # - Multiplier (e.g., 3x): red (only shown when > 1x)

@@ -69,10 +69,7 @@ impl ConfigLoader for Config {
             let _ = write_migrated_config(&path, &value);
         }
 
-        let Ok(config): Result<Config, _> = toml::from_str(&value.to_string()) else {
-            return Self::default();
-        };
-
+        let config = deserialize_migrated_value(&value);
         config.merge_default_segments()
     }
 
@@ -96,8 +93,7 @@ impl ConfigLoader for Config {
             write_migrated_config(&path, &result.value)?;
         }
 
-        let config: Config = toml::from_str(&result.value.to_string())
-            .with_context(|| "Failed to deserialize migrated config")?;
+        let config = deserialize_migrated_value(&result.value);
 
         Ok((config.merge_default_segments(), Some(result)))
     }
@@ -164,6 +160,21 @@ impl ConfigLoader for Config {
     }
 }
 
+/// Deserializes a migrated `toml::Value` into a `Config`.
+///
+/// Uses `toml::to_string` instead of `Value::to_string` because the latter
+/// produces inline table syntax (`{ key = value }`) which is invalid at the
+/// TOML document level.
+fn deserialize_migrated_value(value: &toml::Value) -> Config {
+    if value.as_table().is_some_and(toml::map::Map::is_empty) {
+        return Config::default();
+    }
+    let Ok(toml_str) = toml::to_string(value) else {
+        return Config::default();
+    };
+    toml::from_str(&toml_str).unwrap_or_default()
+}
+
 /// Writes migrated config back to file if changes were made.
 fn write_migrated_config(path: &Path, value: &toml::Value) -> Result<()> {
     let content = template::generate_overlay(value);
@@ -210,5 +221,195 @@ mod tests {
             ..Config::default()
         };
         assert!(config.check().is_err());
+    }
+
+    // --- Regression tests for toml::Value::to_string() bug ---
+    // toml::Value::to_string() produces inline table syntax ({ key = value })
+    // which is invalid at the TOML document level, causing deserialization failure.
+
+    #[test]
+    fn test_deserialize_empty_table_returns_defaults() {
+        let empty = toml::Value::Table(toml::map::Map::new());
+        let config = deserialize_migrated_value(&empty);
+        assert_eq!(config.style.mode, crate::config::DisplayMode::Auto);
+        assert_eq!(config.style.separator, " | ");
+        assert_eq!(config.api.timeout_ms, 5000);
+        assert_eq!(config.cache.enabled, true);
+    }
+
+    #[test]
+    fn test_deserialize_preserves_custom_values_after_migration() {
+        // Simulate a v0.2.0 config where mode="ascii" and timeout_ms=3000 are custom
+        let raw: toml::Value = toml::from_str(
+            r#"
+[style]
+mode = "ascii"
+separator = " | "
+[api]
+timeout_ms = 3000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+"#,
+        )
+        .unwrap();
+
+        let MigrationResult { value, .. } = migration::migrate(raw);
+        let config = deserialize_migrated_value(&value);
+
+        assert_eq!(
+            config.style.mode,
+            crate::config::DisplayMode::Ascii,
+            "custom mode=ascii must survive migration + deserialize"
+        );
+        assert_eq!(
+            config.api.timeout_ms, 3000,
+            "custom timeout_ms=3000 must survive migration + deserialize"
+        );
+        // Defaults should fill in
+        assert_eq!(config.style.separator, " | ");
+        assert_eq!(config.cache.ttl_seconds, 300);
+    }
+
+    #[test]
+    fn test_deserialize_preserves_segment_order_after_migration() {
+        // Segments with non-default values (enabled=false) so they survive stripping
+        let raw: toml::Value = toml::from_str(
+            r##"
+[style]
+mode = "auto"
+separator = " | "
+[api]
+timeout_ms = 5000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+[[segments]]
+id = "mcp_usage"
+enabled = false
+[segments.icon]
+emoji = "🌐"
+ascii = "#"
+[segments.options]
+[[segments]]
+id = "token_usage"
+enabled = true
+[segments.icon]
+emoji = "🪙"
+ascii = "$"
+[segments.options]
+show_timer = true
+timer_mode = "clock"
+show_multiplier = true
+"##,
+        )
+        .unwrap();
+
+        let MigrationResult { value, .. } = migration::migrate(raw);
+        let config = deserialize_migrated_value(&value);
+        let merged = config.merge_default_segments();
+
+        let ids: Vec<&str> = merged.segments.iter().map(|s| s.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            vec!["mcp_usage", "token_usage", "weekly_usage"],
+            "user segment order must be preserved after migration + deserialize"
+        );
+        // Verify the non-default value also survived
+        let mcp_seg = merged
+            .segments
+            .iter()
+            .find(|s| s.id == "mcp_usage")
+            .unwrap();
+        assert!(!mcp_seg.enabled, "enabled=false must survive");
+    }
+
+    #[test]
+    fn test_deserialize_non_default_segment_enabled_survives() {
+        let raw: toml::Value = toml::from_str(
+            r##"
+[style]
+mode = "emoji"
+separator = " | "
+[api]
+timeout_ms = 5000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+[[segments]]
+id = "token_usage"
+enabled = false
+[segments.icon]
+emoji = "🪙"
+ascii = "$"
+[segments.options]
+show_timer = true
+timer_mode = "clock"
+show_multiplier = true
+"##,
+        )
+        .unwrap();
+
+        let MigrationResult { value, .. } = migration::migrate(raw);
+        let config = deserialize_migrated_value(&value);
+
+        let token_seg = config
+            .segments
+            .iter()
+            .find(|s| s.id == "token_usage")
+            .expect("token_usage segment must exist");
+        assert!(
+            !token_seg.enabled,
+            "enabled=false must survive migration + deserialize"
+        );
+        assert_eq!(
+            config.style.mode,
+            crate::config::DisplayMode::Emoji,
+            "custom mode=emoji must survive"
+        );
+    }
+
+    #[test]
+    fn test_toml_value_to_string_would_fail() {
+        // Guard against accidentally reverting to Value::to_string().
+        // This test documents WHY we use toml::to_string() instead.
+        let raw: toml::Value = toml::from_str(
+            r#"
+[style]
+mode = "ascii"
+[api]
+timeout_ms = 3000
+"#,
+        )
+        .unwrap();
+
+        let MigrationResult { value, .. } = migration::migrate(raw);
+
+        // Value::to_string() produces inline table syntax, invalid at document level
+        let bad_output = value.to_string();
+        assert!(
+            bad_output.starts_with('{'),
+            "regression guard: Value::to_string() should still produce inline syntax \
+             (if this changes, the deserialize_migrated_value fix may no longer be needed)"
+        );
+        assert!(
+            toml::from_str::<Config>(&bad_output).is_err(),
+            "regression guard: inline table syntax from Value::to_string() must fail \
+             deserialization (otherwise we don't need the workaround)"
+        );
+
+        // But toml::to_string() produces valid TOML
+        let good_output = toml::to_string(&value).unwrap();
+        assert!(
+            !good_output.starts_with('{'),
+            "toml::to_string() must produce standard TOML"
+        );
+        assert!(
+            toml::from_str::<Config>(&good_output).is_ok(),
+            "toml::to_string() output must deserialize successfully"
+        );
     }
 }
