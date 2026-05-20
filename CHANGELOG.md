@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1] - 2026-05-20
+
+### Fixed
+
+- TOML config deserialization for migrated configuration values
+- Color thresholds adjusted for better status bar visibility
+
 ## [0.2.0] - 2026-05-10
 
 ### Added

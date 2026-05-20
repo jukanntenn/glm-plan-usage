@@ -18,7 +18,7 @@ npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.
 
 - 📊 **Real-time Usage Tracking**: Display Token and MCP usage percentages
 - 🗓️ **Weekly Quota Support**: Display weekly Token usage (new plan users only)
-- 🎨 **Color-coded Warnings**: Green (0-50%), Yellow (51-80%), Red (81-100%)
+- 🎨 **Color-coded Warnings**: Green (0-80%), Yellow (81-90%), Red (91%+)
 - ⚡ **Smart Caching**: 5-minute cache to reduce API calls
 - 🔍 **Auto Platform Detection**: Supports ZAI and ZHIPU platforms
 - 🔄 **Model Consumption Multiplier**: Automatically calculates and displays consumption rate for premium models during peak/off-peak hours
