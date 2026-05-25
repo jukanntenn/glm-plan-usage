@@ -12,6 +12,7 @@ mod api;
 mod cli;
 mod config;
 mod core;
+mod setup;
 mod util;
 
 use clap::Parser;
@@ -28,6 +29,7 @@ fn main() {
             Commands::Print => handle_print(),
             Commands::Check => handle_check(),
             Commands::Update => handle_update(),
+            Commands::Setup { with_ccline } => handle_setup(with_ccline),
         }
         return;
     }
@@ -123,6 +125,14 @@ fn handle_update() {
             eprintln!("Error: {e}");
             std::process::exit(1);
         }
+    }
+}
+
+/// Configure Claude Code statusline settings.
+fn handle_setup(with_ccline: bool) {
+    if let Err(e) = setup::run(with_ccline) {
+        eprintln!("Error: {e}");
+        std::process::exit(1);
     }
 }
 

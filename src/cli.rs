@@ -35,4 +35,11 @@ pub enum Commands {
 
     /// Update or migrate the configuration file.
     Update,
+
+    /// Configure Claude Code statusline settings.
+    Setup {
+        /// Configure with `CCometixLine` combined mode.
+        #[arg(long)]
+        with_ccline: bool,
+    },
 }
