@@ -132,7 +132,7 @@ impl StatusLineGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{IconConfig, SegmentConfig, StyleConfig};
+    use crate::config::{IconConfig, StyleConfig};
     use std::collections::HashMap;
 
     fn test_config() -> Config {

@@ -26,6 +26,22 @@ npm install -g @jukanntenn/glm-plan-usage --registry https://registry.npmmirror.
 
 ## Usage
 
+### Quick Setup (Recommended)
+
+After installation, run the following command to automatically configure Claude Code's `settings.json`:
+
+```bash
+glm-plan-usage setup
+```
+
+If you are also using [CCometixLine](https://github.com/Haleclipse/CCometixLine), use combined mode:
+
+```bash
+glm-plan-usage setup --with-ccline
+```
+
+### Manual Setup
+
 Add to your Claude Code `settings.json`:
 
 **Linux/macOS:**

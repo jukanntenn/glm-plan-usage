@@ -112,6 +112,22 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 
 ## Claude Code 配置
 
+### 快速配置（推荐）
+
+安装后运行以下命令自动配置 Claude Code 的 `settings.json`：
+
+```bash
+glm-plan-usage setup
+```
+
+如果同时使用 [CCometixLine](https://github.com/Haleclipse/CCometixLine)，可使用组合模式：
+
+```bash
+glm-plan-usage setup --with-ccline
+```
+
+### 手动配置
+
 在 Claude Code 的 `settings.json` 中添加：
 
 **Linux/macOS:**
@@ -289,6 +305,7 @@ $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 插件提供以下命令管理配置：
 
 ```bash
+glm-plan-usage setup      # 自动配置 Claude Code 状态栏
 glm-plan-usage init       # 初始化配置文件 (~/.claude/glm-plan-usage/config.toml)
 glm-plan-usage print      # 打印当前配置内容
 glm-plan-usage check      # 验证配置文件是否有效

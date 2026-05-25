@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0] - 2026-05-25
+
+### Added
+
+- `setup` command to automatically configure Claude Code statusline settings
+- Combined mode support with CCometixLine via `--with-ccline` flag
+
 ## [0.2.1] - 2026-05-20
 
 ### Fixed

@@ -112,6 +112,22 @@ cp target/release/glm-plan-usage ~/.claude/glm-plan-usage/
 
 ## Configuration
 
+### Quick Setup (Recommended)
+
+After installation, run the following command to automatically configure Claude Code's `settings.json`:
+
+```bash
+glm-plan-usage setup
+```
+
+If you are also using [CCometixLine](https://github.com/Haleclipse/CCometixLine), use combined mode:
+
+```bash
+glm-plan-usage setup --with-ccline
+```
+
+### Manual Setup
+
 Add to your Claude Code `settings.json`:
 
 **Linux/macOS:**
@@ -289,6 +305,7 @@ $env:ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
 The plugin provides the following commands to manage configuration:
 
 ```bash
+glm-plan-usage setup      # Configure Claude Code statusline automatically
 glm-plan-usage init       # Initialize config file (~/.claude/glm-plan-usage/config.toml)
 glm-plan-usage print      # Print current configuration
 glm-plan-usage check      # Validate configuration file
