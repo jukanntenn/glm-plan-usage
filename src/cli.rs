@@ -8,6 +8,7 @@ use clap::{Parser, Subcommand};
 /// in the Claude Code status bar.
 #[derive(Parser, Debug)]
 #[command(name = "glm-plan-usage")]
+#[command(version)]
 #[command(about = "Display GLM plan usage statistics in Claude Code status bar", long_about = None)]
 pub struct Args {
     #[command(subcommand)]
