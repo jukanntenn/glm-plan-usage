@@ -1,0 +1,14 @@
+{
+  "model": {
+    "id": "glm-5.1",
+    "display_name": "GLM-5.1"
+  },
+  "workspace": {
+    "current_dir": "/home/user/project"
+  },
+  "transcript_path": "/path/to/transcript",
+  "cost": {
+    "tokens": 1000.0,
+    "cost": 0.5
+  }
+}

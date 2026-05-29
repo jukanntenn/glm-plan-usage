@@ -1,0 +1,33 @@
+{
+  "code": 200,
+  "msg": "ok",
+  "success": true,
+  "data": {
+    "limits": [
+      {
+        "type": "TOKENS_LIMIT",
+        "unit": 3,
+        "usage": 100000,
+        "currentValue": 50000,
+        "percentage": 50,
+        "nextResetTime": 1800000000000
+      },
+      {
+        "type": "TOKENS_LIMIT",
+        "unit": 6,
+        "usage": 500000,
+        "currentValue": 250000,
+        "percentage": 50,
+        "nextResetTime": 1800000000000
+      },
+      {
+        "type": "TIME_LIMIT",
+        "unit": 0,
+        "usage": 100,
+        "currentValue": 30,
+        "percentage": 30,
+        "nextResetTime": null
+      }
+    ]
+  }
+}
