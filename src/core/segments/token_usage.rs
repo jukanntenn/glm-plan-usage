@@ -438,4 +438,109 @@ mod tests {
         let result = format_countdown(now + 86400);
         assert_eq!(result, "24:00");
     }
+
+    #[test]
+    fn test_timer_mode_from_str_countdown() {
+        assert_eq!(TimerMode::from_str("countdown"), TimerMode::Countdown);
+    }
+
+    #[test]
+    fn test_timer_mode_from_str_clock() {
+        assert_eq!(TimerMode::from_str("clock"), TimerMode::Clock);
+    }
+
+    #[test]
+    fn test_timer_mode_from_str_unknown_defaults_clock() {
+        assert_eq!(TimerMode::from_str("unknown"), TimerMode::Clock);
+        assert_eq!(TimerMode::from_str(""), TimerMode::Clock);
+    }
+
+    #[test]
+    fn test_resolve_timer_mode_none() {
+        let (show, mode) = resolve_timer_mode(None);
+        assert!(show);
+        assert_eq!(mode, TimerMode::Clock);
+    }
+
+    #[test]
+    fn test_resolve_timer_mode_show_timer_false() {
+        let mut config = SegmentConfig::token_usage();
+        config
+            .options
+            .insert("show_timer".to_string(), serde_json::Value::Bool(false));
+        let (show, mode) = resolve_timer_mode(Some(&config));
+        assert!(!show);
+        assert_eq!(mode, TimerMode::Clock);
+    }
+
+    #[test]
+    fn test_resolve_timer_mode_show_timer_true_explicit() {
+        let mut config = SegmentConfig::token_usage();
+        config
+            .options
+            .insert("show_timer".to_string(), serde_json::Value::Bool(true));
+        let (show, mode) = resolve_timer_mode(Some(&config));
+        assert!(show);
+        assert_eq!(mode, TimerMode::Clock);
+    }
+
+    #[test]
+    fn test_resolve_timer_mode_show_countdown_backward_compat() {
+        // When show_timer is absent but show_countdown is present → Countdown mode
+        let mut config = SegmentConfig::token_usage();
+        config.options.remove("show_timer");
+        config
+            .options
+            .insert("show_countdown".to_string(), serde_json::Value::Bool(true));
+        let (show, mode) = resolve_timer_mode(Some(&config));
+        assert!(show);
+        assert_eq!(mode, TimerMode::Countdown);
+    }
+
+    #[test]
+    fn test_resolve_timer_mode_timer_mode_countdown() {
+        let mut config = SegmentConfig::token_usage();
+        config.options.insert(
+            "timer_mode".to_string(),
+            serde_json::Value::String("countdown".to_string()),
+        );
+        let (show, mode) = resolve_timer_mode(Some(&config));
+        assert!(show);
+        assert_eq!(mode, TimerMode::Countdown);
+    }
+
+    #[test]
+    fn test_calculate_multiplier_no_model() {
+        let input: InputData = serde_json::from_str("{}").unwrap();
+        let config = Config::default();
+        assert_eq!(calculate_multiplier(&input, &config), 1.0);
+    }
+
+    #[test]
+    fn test_calculate_multiplier_non_premium_model() {
+        let input: InputData =
+            serde_json::from_str(r#"{"model": {"id": "claude-sonnet"}}"#).unwrap();
+        let config = Config::default();
+        assert_eq!(calculate_multiplier(&input, &config), 1.0);
+    }
+
+    #[test]
+    fn test_current_minutes_since_midnight() {
+        let mins = current_minutes_since_midnight();
+        assert!(mins < 1440);
+    }
+
+    #[test]
+    fn test_format_clock_time_invalid_timestamp() {
+        // i64::MIN is an invalid timestamp
+        let result = format_clock_time(i64::MIN);
+        assert_eq!(result, "--:--");
+    }
+
+    #[test]
+    fn test_is_promo_active_invalid_date() {
+        assert_eq!(is_promo_active("not-a-date"), None);
+        assert_eq!(is_promo_active("2026-13-01"), None);
+        assert_eq!(is_promo_active(""), None);
+    }
 }

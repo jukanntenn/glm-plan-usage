@@ -151,3 +151,58 @@ impl GlmApiClient {
             .set("Content-Type", "application/json")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // All env var tests consolidated into one test to avoid race conditions
+    // when tests run in parallel (env vars are process-global state).
+    #[test]
+    fn test_from_env_variants() {
+        // 1. Missing token → error
+        std::env::remove_var(AUTH_TOKEN_ENV);
+        std::env::remove_var(BASE_URL_ENV);
+        let result = GlmApiClient::from_env(Duration::from_secs(5), 2);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("ANTHROPIC_AUTH_TOKEN"));
+
+        // 2. ZHIPU URL strips /anthropic
+        std::env::set_var(AUTH_TOKEN_ENV, "test-token");
+        std::env::set_var(BASE_URL_ENV, "https://open.bigmodel.cn/api/anthropic");
+        let client = GlmApiClient::from_env(Duration::from_secs(5), 2).unwrap();
+        assert_eq!(client.base_url, "https://open.bigmodel.cn/api");
+        assert_eq!(client.token, "test-token");
+
+        // 3. ZAI URL unchanged
+        std::env::set_var(BASE_URL_ENV, "https://api.z.ai/v1");
+        let client = GlmApiClient::from_env(Duration::from_secs(5), 2).unwrap();
+        assert_eq!(client.base_url, "https://api.z.ai/v1");
+
+        // 4. Unknown platform → error
+        std::env::set_var(BASE_URL_ENV, "https://api.example.com");
+        let result = GlmApiClient::from_env(Duration::from_secs(5), 2);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Platform detection"));
+
+        // 5. Default URL (unset BASE_URL) → ZHIPU with /anthropic stripped
+        std::env::remove_var(BASE_URL_ENV);
+        let client = GlmApiClient::from_env(Duration::from_secs(5), 2).unwrap();
+        assert_eq!(client.base_url, "https://open.bigmodel.cn/api");
+
+        // 6. Retry attempts preserved
+        std::env::set_var(BASE_URL_ENV, "https://api.z.ai/v1");
+        let client = GlmApiClient::from_env(Duration::from_secs(5), 7).unwrap();
+        assert_eq!(client.retry_attempts, 7);
+
+        // Cleanup
+        std::env::remove_var(AUTH_TOKEN_ENV);
+        std::env::remove_var(BASE_URL_ENV);
+    }
+}

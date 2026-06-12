@@ -381,4 +381,240 @@ mode = "ascii"
             &Value::String("b".into())
         ));
     }
+
+    #[test]
+    fn test_count_diffs_no_changes() {
+        let a: Value = toml::from_str("[style]\nmode = \"auto\"").unwrap();
+        let b = a.clone();
+        assert_eq!(count_diffs(&a, &b), 0);
+    }
+
+    #[test]
+    fn test_count_diffs_with_changes() {
+        let a: Value = toml::from_str("[style]\nmode = \"auto\"").unwrap();
+        let b: Value = toml::from_str("[style]\nmode = \"ascii\"").unwrap();
+        // Both tables have "style" key, iterated from both orig and mig → counted twice for same key
+        assert!(count_diffs(&a, &b) > 0);
+    }
+
+    #[test]
+    fn test_count_diffs_non_table_original() {
+        let a = Value::Array(vec![]);
+        let b = Value::Array(vec![]);
+        assert_eq!(count_diffs(&a, &b), 0);
+    }
+
+    #[test]
+    fn test_count_diffs_non_table_migrated() {
+        let a: Value = toml::from_str("[style]\nmode = \"auto\"").unwrap();
+        let b = Value::Array(vec![]);
+        // original has keys, migrated doesn't → count original keys
+        assert!(count_diffs(&a, &b) > 0);
+    }
+
+    #[test]
+    fn test_count_diffs_key_only_in_migrated() {
+        let a: Value = toml::from_str("[style]\nmode = \"auto\"").unwrap();
+        let b: Value =
+            toml::from_str("[style]\nmode = \"auto\"\n[api]\ntimeout_ms = 3000").unwrap();
+        assert_eq!(count_diffs(&a, &b), 1);
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_weekly_usage() {
+        let mut raw: Value = toml::from_str(
+            r##"
+[[segments]]
+id = "weekly_usage"
+enabled = true
+[segments.icon]
+emoji = "🗓️"
+ascii = "*"
+[segments.options]
+"##,
+        )
+        .unwrap();
+        strip_segment_defaults(&mut raw);
+        // All defaults → segment should be stripped entirely
+        assert!(raw.get("segments").is_none());
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_mcp_usage() {
+        let mut raw: Value = toml::from_str(
+            r##"
+[[segments]]
+id = "mcp_usage"
+enabled = true
+[segments.icon]
+emoji = "🌐"
+ascii = "#"
+[segments.options]
+"##,
+        )
+        .unwrap();
+        strip_segment_defaults(&mut raw);
+        // All defaults → segment should be stripped entirely
+        assert!(raw.get("segments").is_none());
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_preserves_custom() {
+        let mut raw: Value = toml::from_str(
+            r##"
+[[segments]]
+id = "token_usage"
+enabled = false
+[segments.icon]
+emoji = "🪙"
+ascii = "$"
+[segments.options]
+show_timer = true
+"##,
+        )
+        .unwrap();
+        strip_segment_defaults(&mut raw);
+        // enabled=false is non-default, segment should remain
+        assert!(raw.get("segments").is_some());
+        let segments = raw["segments"].as_array().unwrap();
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0]["id"].as_str(), Some("token_usage"));
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_unknown_id() {
+        let mut raw: Value = toml::from_str(
+            r##"
+[[segments]]
+id = "unknown_segment"
+enabled = true
+"##,
+        )
+        .unwrap();
+        strip_segment_defaults(&mut raw);
+        // Unknown IDs are not stripped (no defaults to compare against)
+        assert!(raw.get("segments").is_some());
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_no_segments() {
+        let mut raw: Value = toml::from_str("[style]\nmode = \"auto\"").unwrap();
+        strip_segment_defaults(&mut raw);
+        // No segments to strip, should be fine
+        assert!(raw.get("segments").is_none());
+    }
+
+    #[test]
+    fn test_strip_segment_defaults_non_table_segment() {
+        // A segment that's not a table (e.g., a string) should be skipped
+        let mut raw = Value::Table(toml::map::Map::new());
+        raw.as_table_mut().unwrap().insert(
+            "segments".into(),
+            Value::Array(vec![Value::String("not_a_table".into())]),
+        );
+        strip_segment_defaults(&mut raw);
+        // Should still have segments (non-table items are skipped)
+        assert!(raw.get("segments").is_some());
+    }
+
+    #[test]
+    fn test_strip_legacy_defaults_removes_empty_sections() {
+        let mut raw: Value = toml::from_str(
+            r#"
+[style]
+mode = "auto"
+separator = " | "
+[api]
+timeout_ms = 5000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+"#,
+        )
+        .unwrap();
+        strip_legacy_defaults(&mut raw);
+        // All defaults → sections should be removed
+        assert!(raw.get("style").is_none());
+        assert!(raw.get("api").is_none());
+        assert!(raw.get("cache").is_none());
+    }
+
+    #[test]
+    fn test_strip_legacy_defaults_multiplier() {
+        let mut raw: Value = toml::from_str(
+            r#"
+[style]
+mode = "auto"
+separator = " | "
+[api]
+timeout_ms = 5000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+[multiplier]
+premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
+peak_start = "14:00"
+peak_end = "18:00"
+peak = 3.0
+off_peak = 2.0
+[multiplier.promo]
+off_peak = 1.0
+expires = "2026-06-30"
+"#,
+        )
+        .unwrap();
+        strip_legacy_defaults(&mut raw);
+        // All multiplier defaults → should be removed
+        assert!(raw.get("multiplier").is_none());
+    }
+
+    #[test]
+    fn test_migrate_legacy_config_with_segments() {
+        let raw: Value = toml::from_str(
+            r##"
+[style]
+mode = "auto"
+separator = " | "
+[api]
+timeout_ms = 5000
+retry_attempts = 2
+[cache]
+enabled = true
+ttl_seconds = 300
+[[segments]]
+id = "token_usage"
+enabled = true
+[segments.icon]
+emoji = "🪙"
+ascii = "$"
+[segments.options]
+show_timer = true
+timer_mode = "clock"
+show_multiplier = true
+"##,
+        )
+        .unwrap();
+
+        let result = migrate(raw);
+        // Legacy config with all defaults → changes should strip everything
+        assert!(result.changes > 0);
+        // Segments should be stripped since all values are defaults
+        assert!(result.value.get("segments").is_none());
+    }
+
+    #[test]
+    fn test_migrate_new_format_no_changes() {
+        let raw: Value = toml::from_str(
+            r#"
+[style]
+mode = "ascii"
+"#,
+        )
+        .unwrap();
+        let result = migrate(raw);
+        assert_eq!(result.changes, 0);
+        assert_eq!(result.value["style"]["mode"].as_str(), Some("ascii"));
+    }
 }

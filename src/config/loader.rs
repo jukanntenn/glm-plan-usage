@@ -412,4 +412,55 @@ timeout_ms = 3000
             "toml::to_string() output must deserialize successfully"
         );
     }
+
+    #[test]
+    fn test_config_path_returns_valid_path() {
+        let path = Config::config_path();
+        assert!(path.to_string_lossy().contains(".claude"));
+        assert!(path.to_string_lossy().contains("glm-plan-usage"));
+        assert!(path.to_string_lossy().contains("config.toml"));
+    }
+
+    #[test]
+    fn test_load_returns_default_when_no_file() {
+        // Set HOME to a temp dir that has no config file
+        let temp_dir = std::env::temp_dir().join("glm-test-load-no-file");
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        // We can't easily override dirs::home_dir(), but we can test
+        // deserialize_migrated_value with empty input which is what load() does
+        let empty = toml::Value::Table(toml::map::Map::new());
+        let config = deserialize_migrated_value(&empty);
+        assert_eq!(config.style.mode, crate::config::DisplayMode::Auto);
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_deserialize_migrated_value_non_table() {
+        // If the value is not a table (e.g., just an array), should return defaults
+        let val = toml::Value::Array(vec![]);
+        let config = deserialize_migrated_value(&val);
+        assert_eq!(config.style.mode, crate::config::DisplayMode::Auto);
+    }
+
+    #[test]
+    fn test_check_all_valid_ids() {
+        let config = Config {
+            segments: vec![
+                SegmentConfig::token_usage(),
+                SegmentConfig::weekly_usage(),
+                SegmentConfig::mcp_usage(),
+            ],
+            ..Config::default()
+        };
+        assert!(config.check().is_ok());
+    }
+
+    #[test]
+    fn test_print_outputs_toml() {
+        let config = Config::default();
+        // print() writes to stdout, just verify it doesn't error
+        assert!(config.print().is_ok());
+    }
 }

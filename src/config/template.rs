@@ -448,4 +448,271 @@ mod tests {
         assert_eq!(kv.key, "mode");
         assert_eq!(kv.value, "\"auto\"");
     }
+
+    #[test]
+    fn test_format_toml_value_string() {
+        assert_eq!(
+            format_toml_value(&Value::String("hello".into())),
+            "\"hello\""
+        );
+    }
+
+    #[test]
+    fn test_format_toml_value_integer() {
+        assert_eq!(format_toml_value(&Value::Integer(42)), "42");
+    }
+
+    #[test]
+    fn test_format_toml_value_float() {
+        assert_eq!(format_toml_value(&Value::Float(3.14)), "3.14");
+    }
+
+    #[test]
+    fn test_format_toml_value_boolean() {
+        assert_eq!(format_toml_value(&Value::Boolean(true)), "true");
+        assert_eq!(format_toml_value(&Value::Boolean(false)), "false");
+    }
+
+    #[test]
+    fn test_format_toml_value_array() {
+        let arr = Value::Array(vec![
+            Value::Integer(1),
+            Value::Integer(2),
+            Value::Integer(3),
+        ]);
+        assert_eq!(format_toml_value(&arr), "[1, 2, 3]");
+    }
+
+    #[test]
+    fn test_format_toml_value_array_strings() {
+        let arr = Value::Array(vec![Value::String("a".into()), Value::String("b".into())]);
+        assert_eq!(format_toml_value(&arr), "[\"a\", \"b\"]");
+    }
+
+    #[test]
+    fn test_format_toml_value_table() {
+        let mut map = toml::map::Map::new();
+        map.insert("x".into(), Value::Integer(1));
+        map.insert("y".into(), Value::Integer(2));
+        let table = Value::Table(map);
+        let result = format_toml_value(&table);
+        // Order may vary
+        assert!(result.contains("x = 1"));
+        assert!(result.contains("y = 2"));
+        assert!(result.starts_with('{'));
+        assert!(result.ends_with('}'));
+    }
+
+    #[test]
+    fn test_format_toml_value_empty_array() {
+        let arr = Value::Array(vec![]);
+        assert_eq!(format_toml_value(&arr), "[]");
+    }
+
+    #[test]
+    fn test_parse_commented_section_header() {
+        assert_eq!(
+            parse_commented_section_header("# [style]"),
+            Some(vec!["style".to_string()])
+        );
+        assert_eq!(
+            parse_commented_section_header("# [api]"),
+            Some(vec!["api".to_string()])
+        );
+        // Nested path
+        assert_eq!(
+            parse_commented_section_header("# [segments.options]"),
+            Some(vec!["segments".to_string(), "options".to_string()])
+        );
+        // Not a section header
+        assert_eq!(parse_commented_section_header("not a header"), None);
+        // Array of tables is not a regular section
+        assert_eq!(parse_commented_section_header("# [[segments]]"), None);
+        // Missing bracket
+        assert_eq!(parse_commented_section_header("# [style"), None);
+    }
+
+    #[test]
+    fn test_is_commented_segments_header() {
+        assert!(is_commented_segments_header("# [[segments]]"));
+        assert!(!is_commented_segments_header("# [style]"));
+        assert!(!is_commented_segments_header("[[segments]]"));
+    }
+
+    #[test]
+    fn test_is_segment_subsection() {
+        assert!(is_segment_subsection("# [segments.options]"));
+        assert!(is_segment_subsection("# [segments.icon]"));
+        assert!(!is_segment_subsection("# [style]"));
+        assert!(!is_segment_subsection("# [api]"));
+    }
+
+    #[test]
+    fn test_trim_comment_prefix() {
+        assert_eq!(trim_comment_prefix("# key = value"), "key = value");
+        assert_eq!(trim_comment_prefix("#key"), "key");
+        assert_eq!(trim_comment_prefix("no comment"), "no comment");
+    }
+
+    #[test]
+    fn test_get_user_value() {
+        let mut root = toml::map::Map::new();
+        let mut style = toml::map::Map::new();
+        style.insert("mode".into(), Value::String("ascii".into()));
+        root.insert("style".into(), Value::Table(style));
+        let val = Value::Table(root);
+
+        assert!(get_user_value(&val, &[], "nonexistent").is_none());
+        assert!(get_user_value(&val, &["style".to_string()], "mode").is_some());
+        assert!(get_user_value(&val, &["nonexistent".to_string()], "mode").is_none());
+    }
+
+    #[test]
+    fn test_get_segment_field() {
+        let mut seg = toml::map::Map::new();
+        seg.insert("id".into(), Value::String("token_usage".into()));
+        seg.insert("enabled".into(), Value::Boolean(false));
+        let seg_val = Value::Table(seg);
+
+        assert_eq!(
+            get_segment_field(&seg_val, &[], "id").and_then(|v| v.as_str().map(String::from)),
+            Some("token_usage".to_string())
+        );
+        assert!(get_segment_field(&seg_val, &[], "nonexistent").is_none());
+
+        // With path
+        let mut nested = toml::map::Map::new();
+        let mut icon = toml::map::Map::new();
+        icon.insert("emoji".into(), Value::String("🪙".into()));
+        nested.insert("icon".into(), Value::Table(icon));
+        let nested_val = Value::Table(nested);
+        assert!(get_segment_field(&nested_val, &["segments.icon".to_string()], "emoji").is_some());
+    }
+
+    #[test]
+    fn test_find_segment_value() {
+        let mut root = toml::map::Map::new();
+        let seg1 = {
+            let mut m = toml::map::Map::new();
+            m.insert("id".into(), Value::String("token_usage".into()));
+            Value::Table(m)
+        };
+        let seg2 = {
+            let mut m = toml::map::Map::new();
+            m.insert("id".into(), Value::String("mcp_usage".into()));
+            Value::Table(m)
+        };
+        root.insert("segments".into(), Value::Array(vec![seg1, seg2]));
+        let val = Value::Table(root);
+
+        assert!(find_segment_value(&val, "token_usage").is_some());
+        assert!(find_segment_value(&val, "mcp_usage").is_some());
+        assert!(find_segment_value(&val, "nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_find_segment_value_no_segments() {
+        let val = Value::Table(toml::map::Map::new());
+        assert!(find_segment_value(&val, "token_usage").is_none());
+    }
+
+    #[test]
+    fn test_generate_overlay_with_segments() {
+        let raw: Value = toml::from_str(
+            r##"
+[style]
+mode = "ascii"
+[[segments]]
+id = "token_usage"
+enabled = false
+"##,
+        )
+        .unwrap();
+
+        let result = generate_overlay(&raw);
+        assert!(result.contains("mode = \"ascii\""));
+        assert!(result.contains("[[segments]]"));
+        assert!(result.contains("enabled = false"));
+    }
+
+    #[test]
+    fn test_generate_overlay_preserves_user_segment_order() {
+        let raw: Value = toml::from_str(
+            r##"
+[style]
+mode = "auto"
+[[segments]]
+id = "mcp_usage"
+enabled = false
+[[segments]]
+id = "token_usage"
+enabled = false
+"##,
+        )
+        .unwrap();
+
+        let result = generate_overlay(&raw);
+        let mcp_pos = result.find("mcp_usage").unwrap();
+        let token_pos = result.find("token_usage").unwrap();
+        assert!(mcp_pos < token_pos, "user segment order must be preserved");
+    }
+
+    #[test]
+    fn test_section_has_data_in_path() {
+        let lines = vec![
+            "# [style]".to_string(),
+            "# mode = \"auto\"".to_string(),
+            "# separator = \" | \"".to_string(),
+        ];
+        let mut style = toml::map::Map::new();
+        style.insert("mode".into(), Value::String("ascii".into()));
+        let mut root = toml::map::Map::new();
+        root.insert("style".into(), Value::Table(style));
+        let user = Value::Table(root);
+
+        assert!(section_has_data_in_path(
+            &lines,
+            &user,
+            &["style".to_string()]
+        ));
+        assert!(!section_has_data_in_path(
+            &lines,
+            &user,
+            &["api".to_string()]
+        ));
+    }
+
+    #[test]
+    fn test_render_segment_block_as_comment() {
+        let block = SegmentBlock {
+            id: "test".to_string(),
+            lines: vec![
+                "# [[segments]]".to_string(),
+                "# id = \"test\"".to_string(),
+                "# enabled = true".to_string(),
+            ],
+        };
+        let result = render_segment_block(&block, None, true);
+        // All lines should remain commented
+        for line in result.lines() {
+            if !line.is_empty() {
+                assert!(line.starts_with('#'));
+            }
+        }
+    }
+
+    #[test]
+    fn test_render_segment_block_uncommented() {
+        let block = SegmentBlock {
+            id: "token_usage".to_string(),
+            lines: vec![
+                "# [[segments]]".to_string(),
+                "# id = \"token_usage\"".to_string(),
+                "# enabled = true".to_string(),
+            ],
+        };
+        let result = render_segment_block(&block, None, false);
+        assert!(result.contains("[[segments]]"));
+        assert!(result.contains("id = \"token_usage\""));
+    }
 }

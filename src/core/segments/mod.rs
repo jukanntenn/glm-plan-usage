@@ -144,4 +144,61 @@ mod tests {
         assert_eq!(data.metadata.get("percentage"), Some(&"50".to_string()));
         assert_eq!(data.metadata.get("used"), Some(&"50000".to_string()));
     }
+
+    #[test]
+    fn test_segmentdata_with_secondary() {
+        let data = SegmentData::new("50%").with_secondary("⏱ 14:00");
+        assert_eq!(data.primary, "50%");
+        assert_eq!(data.secondary, "⏱ 14:00");
+        assert!(data.multiplier.is_none());
+    }
+
+    #[test]
+    fn test_segmentdata_with_multiplier() {
+        let data = SegmentData::new("50%").with_multiplier("3x");
+        assert_eq!(data.primary, "50%");
+        assert_eq!(data.multiplier, Some("3x".to_string()));
+    }
+
+    #[test]
+    fn test_segmentdata_chained_builders() {
+        let data = SegmentData::new("75%")
+            .with_secondary("! 2:30")
+            .with_multiplier("2.5x")
+            .with_metadata("percentage", "75");
+        assert_eq!(data.primary, "75%");
+        assert_eq!(data.secondary, "! 2:30");
+        assert_eq!(data.multiplier, Some("2.5x".to_string()));
+        assert_eq!(data.metadata.get("percentage"), Some(&"75".to_string()));
+    }
+
+    #[test]
+    fn test_segmentdata_default() {
+        let data = SegmentData::default();
+        assert!(data.primary.is_empty());
+        assert!(data.secondary.is_empty());
+        assert!(data.multiplier.is_none());
+        assert!(data.metadata.is_empty());
+    }
+
+    #[test]
+    fn test_fetch_usage_cache_disabled() {
+        let mut config = Config::default();
+        config.cache.enabled = false;
+        // Without env vars, from_env will fail → fetch returns None
+        let cache = SharedCache::new();
+        let result = fetch_usage(&config, &cache);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_fetch_usage_cache_enabled() {
+        let mut config = Config::default();
+        config.cache.enabled = true;
+        config.cache.ttl_seconds = 300;
+        // Without env vars, from_env will fail → fetch returns None
+        let cache = SharedCache::new();
+        let result = fetch_usage(&config, &cache);
+        assert!(result.is_none());
+    }
 }
