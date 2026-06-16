@@ -1,6 +1,6 @@
 {
   "name": "@jukanntenn/glm-plan-usage",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "GLM Plan Usage - StatusLine plugin for Claude Code",
   "bin": {
     "glm-plan-usage": "bin/glm-plan-usage.js"

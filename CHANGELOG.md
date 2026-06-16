@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1] - 2026-06-16
+
+### Added
+
+- `--version` flag to print the current version
+- GLM-5.2 recognized as a premium model for multiplier display
+- Extended off-peak 1x deduction promotional rate through 2026-09-30 (previously 2026-06-30)
+
 ## [0.3.0] - 2026-05-25
 
 ### Added
