@@ -103,7 +103,7 @@
 
 # [multiplier]
 # Model ID substrings that identify premium models (case-insensitive)
-# premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
+# premium_models = ["glm-5", "glm-5.1", "glm-5.2", "glm-5-turbo"]
 # Peak hours in UTC+8 (closed interval: both endpoints inclusive)
 # peak_start = "14:00"
 # peak_end = "18:00"
@@ -115,7 +115,7 @@
 # Promotional off-peak rate (overrides off_peak when promo is active)
 # off_peak = 1.0
 # Promo expiry date (inclusive)
-# expires = "2026-06-30"
+# expires = "2026-09-30"
 
 # =============================================================================
 # CACHE CONFIGURATION

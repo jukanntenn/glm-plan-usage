@@ -355,6 +355,7 @@ fn default_premium_models() -> Vec<String> {
     vec![
         "glm-5".to_string(),
         "glm-5.1".to_string(),
+        "glm-5.2".to_string(),
         "glm-5-turbo".to_string(),
     ]
 }
@@ -400,12 +401,27 @@ fn default_promo_off_peak() -> f64 {
 }
 
 fn default_promo_expires() -> String {
-    "2026-06-30".to_string()
+    "2026-09-30".to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_default_premium_models_includes_glm_5_2() {
+        let models = default_premium_models();
+        assert!(
+            models.iter().any(|m| m == "glm-5.2"),
+            "glm-5.2 must be in default premium_models: {models:?}"
+        );
+    }
+
+    #[test]
+    fn test_default_promo_expires_end_of_september() {
+        // Off-peak 1x deduction benefit extended from end of June to end of September.
+        assert_eq!(default_promo_expires(), "2026-09-30");
+    }
 
     #[test]
     fn test_merge_segments_empty() {

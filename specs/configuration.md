@@ -58,7 +58,7 @@ timeout_ms = 5000           # Request timeout in milliseconds
 retry_attempts = 2          # Retry count
 
 [multiplier]
-premium_models = ["glm-5", "glm-5.1", "glm-5-turbo"]
+premium_models = ["glm-5", "glm-5.1", "glm-5.2", "glm-5-turbo"]
 peak_start = "14:00"        # Peak hours start (UTC+8)
 peak_end = "18:00"          # Peak hours end (UTC+8)
 peak = 3.0                  # Peak hours consumption rate
@@ -66,7 +66,7 @@ off_peak = 2.0              # Off-peak hours consumption rate
 
 [multiplier.promo]
 off_peak = 1.0              # Promotional off-peak rate
-expires = "2026-06-30"      # Promo expiry date (inclusive)
+expires = "2026-09-30"      # Promo expiry date (inclusive)
 
 [cache]
 enabled = true
@@ -164,13 +164,13 @@ Timer icons are determined by `timer_mode` + resolved `DisplayMode`, not by segm
 | `style.separator`    | `" | "`                                      |
 | `api.timeout_ms`     | `5000`                                       |
 | `api.retry_attempts` | `2`                                          |
-| `multiplier.premium_models` | `["glm-5", "glm-5.1", "glm-5-turbo"]` |
+| `multiplier.premium_models` | `["glm-5", "glm-5.1", "glm-5.2", "glm-5-turbo"]` |
 | `multiplier.peak_start`     | `"14:00"`                              |
 | `multiplier.peak_end`       | `"18:00"`                              |
 | `multiplier.peak`           | `3.0`                                  |
 | `multiplier.off_peak`       | `2.0`                                  |
 | `multiplier.promo.off_peak` | `1.0`                                  |
-| `multiplier.promo.expires`  | `"2026-06-30"`                         |
+| `multiplier.promo.expires`  | `"2026-09-30"`                         |
 | `cache.enabled`      | `true`                                       |
 | `cache.ttl_seconds`  | `300`                                        |
 | `segments`           | `token_usage`, `weekly_usage`, `mcp_usage`   |

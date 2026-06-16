@@ -525,6 +525,22 @@ mod tests {
     }
 
     #[test]
+    fn test_calculate_multiplier_glm_5_2_recognized_as_premium() {
+        // GLM-5.2 must be recognized as a premium model. With promo forced
+        // inactive, a premium model returns peak (3.0) or off_peak (2.0) —
+        // both >= off_peak — never the 1.0 returned for non-premium models,
+        // regardless of time of day.
+        let input: InputData = serde_json::from_str(r#"{"model": {"id": "glm-5.2"}}"#).unwrap();
+        let mut config = Config::default();
+        config.multiplier.promo.expires = "2000-01-01".to_string();
+        let multiplier = calculate_multiplier(&input, &config);
+        assert!(
+            multiplier >= config.multiplier.off_peak,
+            "glm-5.2 should be premium, got {multiplier}"
+        );
+    }
+
+    #[test]
     fn test_current_minutes_since_midnight() {
         let mins = current_minutes_since_midnight();
         assert!(mins < 1440);
